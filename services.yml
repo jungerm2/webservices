@@ -1,0 +1,76 @@
+# HOMEPAGE
+homer:
+  enable: true
+  github: https://github.com/bastienwirtz/homer
+
+# QoL SERVICES
+pihole:
+  enable: true
+  webpassword: {{ keyring_get("webserver", "pihole") }}
+  github: https://github.com/pi-hole/pi-hole
+code-server:
+  enable: true
+  github: https://github.com/coder/code-server
+
+# MEDIA SERVERS
+plex:
+  enable: true
+  short_description: "Plex organizes all of your personal media so you can enjoy it no matter where you are."
+  link: https://www.plex.tv/
+  claim: ""
+ombi:
+  enable: true
+  github: https://github.com/Ombi-app/Ombi
+
+# TRACKERS
+prowlarr:
+  enable: true
+  github: https://github.com/Prowlarr/Prowlarr
+  short_description: "Indexer manager/proxy built on the popular *arr stack"
+  apikey: ""
+radarr:
+  enable: true
+  github: https://github.com/Radarr/Radarr
+  apikey: ""
+sonarr:
+  enable: true
+  github: https://github.com/Sonarr/Sonarr
+  apikey: ""
+lidarr:
+  enable: true
+  github: https://github.com/Lidarr/Lidarr
+  apikey: ""
+bazarr:
+  enable: true
+  github: https://github.com/morpheus65535/bazarr
+  apikey: ""
+
+# DOWNLOADERS & VPNs
+wireguard:
+  enable: false
+  github: https://github.com/linuxserver/docker-wireguard
+  short_description: "An extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography."
+gluetun:
+  enable: true
+  regions: "Netherlands"
+  provider: {{ keyring_get("webserver", "vpn-provider") }}
+  user: {{ keyring_get("webserver", "vpn-usr") }}
+  password: {{ keyring_get("webserver", "vpn-pass") }}
+  github: https://github.com/qdm12/gluetun
+transmission:
+  enable: true
+  user: {{ keyring_get("webserver", "transmission-usr") }}
+  password: {{ keyring_get("webserver", "transmission-pass") }}
+  github: https://github.com/transmission/transmission
+  short_description: "A fast, easy, and free BitTorrent client."
+
+# MAINTENANCE & MONITORING
+watchtower:
+  enable: false
+  github: https://github.com/containrrr/watchtower
+glances:
+  enable: true
+  github: https://github.com/nicolargo/glances
+tautulli:
+  enable: true
+  github: https://github.com/Tautulli/Tautulli

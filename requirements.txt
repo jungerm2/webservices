@@ -1,0 +1,7 @@
+keyring
+requests
+fabric
+ruamel.yaml
+bs4
+jinja2
+pre-commit

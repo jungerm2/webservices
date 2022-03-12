@@ -1,0 +1,290 @@
+# Version Number is DEPRECATED
+# version: "3"
+
+x-usevpn: &usevpn
+  {%- if wireguard.enable %}
+  network_mode: "service:wireguard"
+  depends_on: [ "wireguard", ]
+  {%- elif gluetun.enable %}
+  network_mode: "service:gluetun"
+  depends_on: [ "gluetun", ]
+  {%- endif %}
+
+x-vpnports: &vpnports
+  ports:
+    # Expose Transmission's webUI,
+    - 9091:9091/tcp
+    # Prowlarr's UI
+    - 9696:9696
+    # Radarr's UI
+    - 7878:7878
+    # Sonarr's UI
+    - 8989:8989
+    # Lidarr's UI
+    - 8686:8686
+    # Bazarr's UI
+    - 6767:6767
+
+services:
+  # HOMEPAGE
+  {%- if homer.enable %}
+  homer:
+    image: b4bz/homer
+    container_name: homer
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/homer:/www/assets
+      - {{ SERVICES_REMOTE_ROOT }}/dashboard-icons:/www/assets/dashboard-icons
+    ports:
+      - 80:8080
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    restart: unless-stopped
+  {%- endif %}
+
+  # QoL SERVICES
+  {%- if pihole.enable %}
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    hostname: piholevm
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8081:80/tcp"
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+      - WEBPASSWORD={{ pihole.webpassword }}
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/pihole:/etc/pihole
+      - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if code_server.enable %}
+  code-server:
+    image: lscr.io/linuxserver/code-server
+    container_name: code-server
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+      - DEFAULT_WORKSPACE=/home
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/vscode:/config
+      - ~/workspace:/home
+      - {{ SERVICES_REMOTE_ROOT }}/homer/:/home/homer
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+  {%- endif %}
+
+  # MEDIA SERVERS
+  {%- if plex.enable %}
+  plex:
+    image: lscr.io/linuxserver/plex
+    container_name: plex
+    network_mode: host
+    #ports:
+    #  - 32400:32400
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=America/Chicago
+      - VERSION=docker
+      {% if plex.claim %}
+      - PLEX_CLAIM={{ plex.claim }}
+      {% endif %}
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/plex:/config
+      - {{ MEDIA_REMOTE_ROOT }}:/media
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if ombi.enable %}
+  ombi:
+    image: lscr.io/linuxserver/ombi
+    container_name: ombi
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/ombi:/config
+    ports:
+      - 3579:3579
+    restart: unless-stopped
+  {%- endif %}
+
+  # TRACKERS
+  {%- if prowlarr.enable %}
+  prowlarr:
+    # Note: use dev branch as there is no master branch atm
+    image: lscr.io/linuxserver/prowlarr:develop
+    container_name: prowlarr
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/prowlarr:/config
+    <<: *usevpn
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if radarr.enable %}
+  radarr:
+    image: lscr.io/linuxserver/radarr
+    container_name: radarr
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/radarr:/config
+      - {{ MEDIA_REMOTE_ROOT }}:/home/media
+      - {{ MEDIA_REMOTE_ROOT }}/movies:/movies
+      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    <<: *usevpn
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if sonarr.enable %}
+  sonarr:
+    image: lscr.io/linuxserver/sonarr
+    container_name: sonarr
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/sonarr:/config
+      - {{ MEDIA_REMOTE_ROOT }}:/home/media
+      - {{ MEDIA_REMOTE_ROOT }}/tv:/tv
+      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    <<: *usevpn
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if lidarr.enable %}
+  lidarr:
+    image: lscr.io/linuxserver/lidarr
+    container_name: lidarr
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/lidarr:/config
+      - {{ MEDIA_REMOTE_ROOT }}:/home/media
+      - {{ MEDIA_REMOTE_ROOT }}/music:/music
+      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    <<: *usevpn
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if bazarr.enable %}
+  bazarr:
+    image: lscr.io/linuxserver/bazarr
+    container_name: bazarr
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/bazarr:/config
+      - {{ MEDIA_REMOTE_ROOT }}:/home/media
+      - {{ MEDIA_REMOTE_ROOT }}/tv:/tv
+      - {{ MEDIA_REMOTE_ROOT }}/movies:/movies
+    <<: *usevpn
+    restart: unless-stopped
+  {%- endif %}
+
+  # DOWNLOADERS & VPNs
+  {%- if wireguard.enable %}
+  # Based on: https://github.com/SebDanielsson/compose-transmission-wireguard
+  wireguard:
+    image: ghcr.io/linuxserver/wireguard
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/wireguard:/config
+      - {{ SERVICES_REMOTE_ROOT }}/wireguard/lib/modules:/lib/modules
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv4.conf.all.src_valid_mark=1
+    <<: *vpnports
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if gluetun.enable %}
+  gluetun:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/gluetun:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER={{ gluetun.provider }}
+      - OPENVPN_USER={{ gluetun.user }}
+      - OPENVPN_PASSWORD={{ gluetun.password }}
+      - SERVER_REGIONS={{ gluetun.regions }}
+    <<: *vpnports
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if transmission.enable %}
+  transmission:
+    image: ghcr.io/linuxserver/transmission
+    container_name: transmission
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+      - TRANSMISSION_WEB_HOME=/combustion-release/
+      - USER={{ transmission.user }}
+      - PASS={{ transmission.password }}
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/transmission:/config
+      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    <<: *usevpn
+    restart: unless-stopped
+  {%- endif %}
+
+  # MAINTENANCE & MONITORING
+  {%- if watchtower.enable %}
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  {%- endif %}
+
+  {%- if tautulli.enable %}
+  tautulli:
+    image: ghcr.io/tautulli/tautulli
+    container_name: tautulli
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/tautulli:/config
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+    ports:
+      - 8181:8181
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if glances.enable %}
+  glances:
+    image: nicolargo/glances:latest
+    container_name: glances
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - user=$DOCKER_USER
+      - TZ=America/Chicago
+      - GLANCES_OPT=-w
+    ports:
+      - 61208:61208
+      - 61209:61209
+    restart: unless-stopped
+  {%- endif %}

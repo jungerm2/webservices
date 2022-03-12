@@ -1,0 +1,208 @@
+---
+# Homepage configuration
+# See https://fontawesome.com/icons for icons options
+
+title: "Web Services"
+subtitle: "Dashboard"
+logo: "logo.png"
+# icon: "fas fa-skull-crossbones" # Optional icon
+
+header: true
+footer: false
+
+# Optional theme customization
+theme: default
+colors:
+  light:
+    highlight-primary: "#3367d6"
+    highlight-secondary: "#4285f4"
+    highlight-hover: "#5a95f5"
+    background: "#f5f5f5"
+    card-background: "#ffffff"
+    text: "#363636"
+    text-header: "#ffffff"
+    text-title: "#303030"
+    text-subtitle: "#424242"
+    card-shadow: rgba(0, 0, 0, 0.1)
+    link: "#3273dc"
+    link-hover: "#363636"
+  dark:
+    highlight-primary: "#3367d6"
+    highlight-secondary: "#4285f4"
+    highlight-hover: "#5a95f5"
+    background: "#131313"
+    card-background: "#2b2b2b"
+    text: "#eaeaea"
+    text-header: "#ffffff"
+    text-title: "#fafafa"
+    text-subtitle: "#f5f5f5"
+    card-shadow: rgba(0, 0, 0, 0.4)
+    link: "#3273dc"
+    link-hover: "#ffdd57"
+
+# Optional message
+# message:
+#   #url: https://b4bz.io
+#   style: "is-dark" # See https://bulma.io/documentation/components/message/#colors for styling options.
+#   title: "Demo !"
+#   icon: "fa fa-grin"
+#   content: "This is a dummy homepage demo. <br /> Find more information on <a href='https://github.com/bastienwirtz/homer'>github.com/bastienwirtz/homer</a>"
+
+# Optional navbar
+# links: [] # Allows for navbar (dark mode, layout, and search) without any links
+links:
+  - name: "Contribute"
+    icon: "fab fa-github"
+    url: "https://github.com/bastienwirtz/homer"
+    target: "_blank" # optional html a tag target attribute
+  - name: "Wiki"
+    icon: "fas fa-book"
+    url: "https://www.wikipedia.org/"
+  # this will link to a second homer page that will load config from additional-page.yml and keep default config values as in config.yml file
+  # see url field and assets/additional-page.yml.dist used in this example:
+  - name: "another page!"
+    icon: "fas fa-file-alt"
+    url: "#additional-page" 
+
+# Services
+# First level array represent a group.
+# Leave only a "items" key if not using group (group name, icon & tagstyle are optional, section separation will not be displayed).
+services:
+  {%- if pihole.enable or code_server.enable %}
+  - name: "Applications"
+    icon: "fas fa-cloud"
+    items:
+      {%- if pihole.enable %}
+      - name: "Pi-Hole"
+        # subtitle: "Adblocker/DNS sinkhole"
+        logo: "assets/dashboard-icons/png/pihole.png"
+        url: "http://{{ hostname }}:8081/admin"
+        type: "PiHole"
+      {%- endif %}
+      {%- if code_server.enable %}
+      - name: "Code-Server"
+        subtitle: "VS Code in the browser"
+        logo: "assets/dashboard-icons/png/vscode.png"
+        url: "http://{{ hostname }}:8443"
+      - name: "Homer Config"
+        subtitle: "Edit homer's configuration"
+        logo: "assets/dashboard-icons/png/homer.png"
+        url: "http://{{ hostname }}:8443/?folder=/home/homer"
+      {%- endif %}
+  {% endif %}
+
+  {%- if plex.enable or ombi.enable %}
+  - name: "Media"
+    icon: "fas fa-film"
+    items:
+      {%- if plex.enable %}
+      - name: "Plex"
+        subtitle: "Streaming Platform"
+        logo: "assets/dashboard-icons/png/plex.png"
+        url: "http://{{ hostname }}:32400"
+      {%- endif %}
+      {%- if ombi.enable %}
+      - name: "Ombi"
+        subtitle: "Plex Requests"
+        logo: "assets/dashboard-icons/png/ombi.png"
+        url: "http://{{ hostname }}:3579"
+      {%- endif %}
+  {% endif %}
+
+  {%- if tautulli.enable or glances.enable %}
+  - name: "Monitoring"
+    icon: "fas fa-screwdriver-wrench"
+    items:
+      {%- if glances.enable %}
+      - name: "Glances"
+        subtitle: "Server Monitoring"
+        logo: "assets/dashboard-icons/png/glances.png"
+        url: "http://{{ hostname }}:61208"
+      {%- endif %}
+      {%- if tautulli.enable %}
+      - name: "Tautulli"
+        subtitle: "Plex Monitoring"
+        logo: "assets/dashboard-icons/png/tautulli.png"
+        url: "http://{{ hostname }}:8181"
+      {%- endif %}
+  {% endif %}
+
+  {%- if prowlarr.enable or radarr.enable or sonarr.enable or lidarr.enable or bazarr.enable %}
+  - name: "Trackers"
+    icon: "fas fa-rss"
+    items:
+      {%- if prowlarr.enable %}
+      - name: "Prowlarr"
+        # subtitle: "Index Manager"
+        logo: "assets/dashboard-icons/png/prowlarr.png"
+        url: "http://{{ hostname }}:9696/"
+        type: "Prowlarr"
+        apikey: "{{ prowlarr.apikey }}"
+      {%- endif %}
+      {%- if radarr.enable %}
+      - name: "Radarr"
+        # subtitle: "Movie Collection Manager"
+        logo: "assets/dashboard-icons/png/radarr.png"
+        url: "http://{{ hostname }}:7878/"
+        type: "Radarr"
+        apikey: "{{ radarr.apikey }}"
+      {%- endif %}
+      {%- if sonarr.enable %}
+      - name: "Sonarr"
+        # subtitle: "TV Show Collection Manager"
+        logo: "assets/dashboard-icons/png/sonarr.png"
+        url: "http://{{ hostname }}:8989/"
+        type: "Sonarr"
+        apikey: "{{ sonarr.apikey }}"
+      {%- endif %}
+      {%- if lidarr.enable %}
+      - name: "Lidarr"
+        # subtitle: "Music Collection Manager"
+        logo: "assets/dashboard-icons/png/lidarr.png"
+        url: "http://{{ hostname }}:8686/"
+        type: "Lidarr"
+        apikey: "{{ lidarr.apikey }}"
+      {%- endif %}
+      {%- if bazarr.enable %}
+      - name: "Bazarr"
+        subtitle: "Subtitle Manager"
+        logo: "assets/dashboard-icons/png/bazarr.png"
+        url: "http://{{ hostname }}:6767/"
+      {%- endif %}
+  {% endif %}
+
+  {%- if transmission.enable %}
+  - name: "Downloaders"
+    icon: "fas fa-download"
+    items:
+      {%- if transmission.enable %}
+      - name: "Transmission"
+        subtitle: "Thin bitTorrent client"
+        logo: "assets/dashboard-icons/png/transmission.png"
+        url: "http://{{ hostname }}:9091"
+      {%- endif %}
+  {% endif %}
+
+  - name: "Resources"
+    icon: "fas fa-link"
+    items:
+      - name: "Awesome Self-hosted"
+        subtitle: "List of self-hosted apps"
+        logo: "assets/dashboard-icons/png/github.png"
+        url: "https://github.com/awesome-selfhosted/awesome-selfhosted/blob/master/README.md"
+      - name: "Awesome Docker"
+        subtitle: "List of docker resources"
+        logo: "assets/dashboard-icons/png/github.png"
+        url: "https://github.com/veggiemonk/awesome-docker/blob/master/README.md"
+      - name: "r/selfhosted"
+        subtitle: "Self-hosted subreddit"
+        logo: "assets/dashboard-icons/png/reddit.png"
+        url: "https://www.reddit.com/r/selfhosted/"
+      - name: "WikiArr"
+        subtitle: "Wiki for all *Arr trackers"
+        logo: "https://github.com/Servarr/Wiki/raw/master/assets/servarr/servarr_dark_1024.png"
+        url: "https://wiki.servarr.com/"
+      - name: "TRaSH Guides"
+        subtitle: "Guides for all things *arr"
+        logo: "https://trash-guides.info/img/logo.png"
+        url: "https://trash-guides.info/"
