@@ -372,9 +372,7 @@ radarr:
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/radarr:/config
-    - {{ MEDIA_REMOTE_ROOT }}:/home/media
-    - {{ MEDIA_REMOTE_ROOT }}/movies:/movies
-    - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    - {{ MEDIA_REMOTE_ROOT }}:/media
   <<: *usevpn
   restart: unless-stopped
 ```
@@ -392,9 +390,7 @@ sonarr:
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/sonarr:/config
-    - {{ MEDIA_REMOTE_ROOT }}:/home/media
-    - {{ MEDIA_REMOTE_ROOT }}/tv:/tv
-    - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    - {{ MEDIA_REMOTE_ROOT }}:/media
   <<: *usevpn
   restart: unless-stopped
 ```
@@ -412,9 +408,7 @@ lidarr:
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/lidarr:/config
-    - {{ MEDIA_REMOTE_ROOT }}:/home/media
-    - {{ MEDIA_REMOTE_ROOT }}/music:/music
-    - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    - {{ MEDIA_REMOTE_ROOT }}:/media
   <<: *usevpn
   restart: unless-stopped
 ```
@@ -432,9 +426,7 @@ bazarr:
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/bazarr:/config
-    - {{ MEDIA_REMOTE_ROOT }}:/home/media
-    - {{ MEDIA_REMOTE_ROOT }}/tv:/tv
-    - {{ MEDIA_REMOTE_ROOT }}/movies:/movies
+    - {{ MEDIA_REMOTE_ROOT }}:/media
   <<: *usevpn
   restart: unless-stopped
 ```
@@ -570,3 +562,9 @@ dtoverlay=disable-bt
 You'll need to create an entry in `services.yml` with all the associated fields and add an entry in the docker file and optionally in homer's config. Make sure to wrap these in a jinja if enabled conditional to be able to easily enable/disable the service. 
 
 </details>
+
+## Changelog
+
+Most recent on top:
+
+- Change volumes for *arr stack to enable hardlinks. Removed all references to individual media folders, i.e:`{{ MEDIA_REMOTE_ROOT }}/tv:/tv` for tv, movies, music, and downloads and replaced them with one volume:`{{ MEDIA_REMOTE_ROOT }}:/media`.

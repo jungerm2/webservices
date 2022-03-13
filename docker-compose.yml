@@ -141,9 +141,7 @@ services:
       - TZ=America/Chicago
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/radarr:/config
-      - {{ MEDIA_REMOTE_ROOT }}:/home/media
-      - {{ MEDIA_REMOTE_ROOT }}/movies:/movies
-      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+      - {{ MEDIA_REMOTE_ROOT }}:/media
     <<: *usevpn
     restart: unless-stopped
   {%- endif %}
@@ -157,9 +155,7 @@ services:
       - TZ=America/Chicago
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/sonarr:/config
-      - {{ MEDIA_REMOTE_ROOT }}:/home/media
-      - {{ MEDIA_REMOTE_ROOT }}/tv:/tv
-      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+      - {{ MEDIA_REMOTE_ROOT }}:/media
     <<: *usevpn
     restart: unless-stopped
   {%- endif %}
@@ -173,9 +169,7 @@ services:
       - TZ=America/Chicago
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/lidarr:/config
-      - {{ MEDIA_REMOTE_ROOT }}:/home/media
-      - {{ MEDIA_REMOTE_ROOT }}/music:/music
-      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+      - {{ MEDIA_REMOTE_ROOT }}:/media
     <<: *usevpn
     restart: unless-stopped
   {%- endif %}
@@ -189,9 +183,7 @@ services:
       - TZ=America/Chicago
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/bazarr:/config
-      - {{ MEDIA_REMOTE_ROOT }}:/home/media
-      - {{ MEDIA_REMOTE_ROOT }}/tv:/tv
-      - {{ MEDIA_REMOTE_ROOT }}/movies:/movies
+      - {{ MEDIA_REMOTE_ROOT }}:/media
     <<: *usevpn
     restart: unless-stopped
   {%- endif %}

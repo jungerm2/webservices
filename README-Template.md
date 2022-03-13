@@ -165,3 +165,9 @@ dtoverlay=disable-bt
 {% call details('<i>How to add a new service?</i>') %}
 You'll need to create an entry in `services.yml` with all the associated fields and add an entry in the docker file and optionally in homer's config. Make sure to wrap these in a jinja if enabled conditional to be able to easily enable/disable the service. 
 {% endcall %}
+
+## Changelog
+
+Most recent on top:
+
+- Change volumes for *arr stack to enable hardlinks. Removed all references to individual media folders, i.e:`{% raw %}{{ MEDIA_REMOTE_ROOT }}/tv:/tv{% endraw %}` for tv, movies, music, and downloads and replaced them with one volume:`{% raw %}{{ MEDIA_REMOTE_ROOT }}:/media{% endraw %}`.
