@@ -238,7 +238,7 @@ services:
       - PASS={{ transmission.password }}
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/transmission:/config
-      - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+      - {{ MEDIA_REMOTE_ROOT }}/downloads:/media/downloads
     <<: *usevpn
     restart: unless-stopped
   {%- endif %}

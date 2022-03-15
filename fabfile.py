@@ -24,18 +24,21 @@ SERVICES_REMOTE_ROOT = "/srv"
 COMPOSE_REMOTE_ROOT = "~"
 COMPOSE_FILE = "docker-compose.yml"
 HOMER_REMOTE_FILE = "config.yml"
+TRANSMISSION_REMOTE_FILE = "settings.json"
 DCP = f"docker-compose -f {COMPOSE_REMOTE_ROOT}/{COMPOSE_FILE}"
+MEDIA_REMOTE_ROOT = "/mnt/mybook/srv/media/"
 
 LOCAL_ROOT = "."
 PROFILE_FILE = ".profile"
 SERVICES_FILE = "services.yml"
 HOMER_FILE = "homer-config.yml"
+TRANSMISSION_FILE = "transmission-config.yml"
+
 SERVICES_PATH = Path(LOCAL_ROOT) / SERVICES_FILE
 COMPOSE_PATH = Path(LOCAL_ROOT) / COMPOSE_FILE
 PROFILE_PATH = Path(LOCAL_ROOT) / PROFILE_FILE
 HOMER_PATH = Path(LOCAL_ROOT) / HOMER_FILE
-
-MEDIA_REMOTE_ROOT = "/mnt/mybook/srv/media/"
+TRANSMISSION_PATH = Path(LOCAL_ROOT) / TRANSMISSION_FILE
 
 
 # Helper Functions
@@ -390,6 +393,22 @@ def configure_homer(c, services_config=None, root=None):
         filename=HOMER_REMOTE_FILE,
     )
     print("done!")
+
+
+@task(aliases=["config_transmission"])
+def configure_transmission(c, root=None):
+    """Upload transmission's `settings.json` to host"""
+    env = get_jinja_env(root)
+    temp = env.get_template(str(TRANSMISSION_PATH))
+    temp = temp.render(keyring_get=keyring.get_password)
+    temp = YAML(typ="safe").load(temp)
+    put_mv(
+        c,
+        json.dumps(temp, indent=2, sort_keys=True),
+        f"/{SERVICES_REMOTE_ROOT}/transmission/",
+        raw=True,
+        filename=TRANSMISSION_REMOTE_FILE,
+    )
 
 
 @task

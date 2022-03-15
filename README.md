@@ -51,9 +51,8 @@ dcp up -d
 
 The above will pull in the newest images, and run all services in containers. After a few minutes (once everything is initialized), you should be able to see the homer dashboard by visiting `http://<remote-ip>`. Which should look like the following:
 
-<p align="center">
-  <img width="830" height="560" src="screenshots/dashboard1.png">
-  <img width="830" height="560" src="screenshots/dashboard2.png">
+<p align="center"> 
+  <img width="600" src="screenshots/dashboard.png">
 </p>
 
 There are a few other tasks that help you configure services (all `config-*` tasks below), but most services will require some further configuration through their webUI. 
@@ -75,6 +74,7 @@ Available tasks:
   apt-update                                          (apt) Update and upgrade system
   configure-homer (config-homer)                      Fetch and add apikey to homer dashboard for *arr apps
   configure-plex (config-plex)                        Claim plex server, see: `https://www.plex.tv/claim/`
+  configure-transmission (config-transmission)        Upload transmission's `settings.json` to host
   configure-wireguard (config-wg, config-wireguard)   Upload wireguard config (i.e: wg0.conf) to host
   dcp-running-services (dcp-ls-up)                    List running services on remote host
   dcp-services (dcp-ls)                               List services in remote's compose file
@@ -479,7 +479,7 @@ transmission:
     - PASS={{ transmission.password }}
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/transmission:/config
-    - {{ MEDIA_REMOTE_ROOT }}/downloads:/downloads
+    - {{ MEDIA_REMOTE_ROOT }}/downloads:/media/downloads
   <<: *usevpn
   restart: unless-stopped
 ```
@@ -563,8 +563,17 @@ You'll need to create an entry in `services.yml` with all the associated fields 
 
 </details>
 
+<details>
+    <summary><i>I can't see a service's memory consumption!</i></summary>
+
+If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, you'll probably need to enable the cgroup memory manager by adding `cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1` to your `/boot/cmdline.txt` file. See [here](https://github.com/docker/for-linux/issues/1112) for more info.
+
+</details>
+
 ## Changelog
 
 Most recent on top:
+
+- Add transmission configuration task and associated files. Now all *arrs can see the directory transmission downloads to as it's in `/media/downloads`.
 
 - Change volumes for *arr stack to enable hardlinks. Removed all references to individual media folders, i.e:`{{ MEDIA_REMOTE_ROOT }}/tv:/tv` for tv, movies, music, and downloads and replaced them with one volume:`{{ MEDIA_REMOTE_ROOT }}:/media`.

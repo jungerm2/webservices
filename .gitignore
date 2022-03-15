@@ -2,3 +2,4 @@ fabric.yml
 wg0.conf
 __pycache__/
 .idea/
+backup/

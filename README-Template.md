@@ -47,9 +47,8 @@ dcp up -d
 
 The above will pull in the newest images, and run all services in containers. After a few minutes (once everything is initialized), you should be able to see the homer dashboard by visiting `http://<remote-ip>`. Which should look like the following:
 
-<p align="center">
-  <img width="830" height="560" src="screenshots/dashboard1.png">
-  <img width="830" height="560" src="screenshots/dashboard2.png">
+<p align="center"> 
+  <img width="600" src="screenshots/dashboard.png">
 </p>
 
 There are a few other tasks that help you configure services (all `config-*` tasks below), but most services will require some further configuration through their webUI. 
@@ -150,11 +149,11 @@ Here we show the snippet of the docker compose file that is responsible for each
 
 ## Troubleshooting & FAQ
 
-{% call details('<i>Raspberry pi can be pinged but does not respond to ssh/http requests.</i>') %}
+{% call details("<i>Raspberry pi can be pinged but does not respond to ssh/http requests.</i>") %}
 This is likely due to the PI running out of RAM (i.e: it can't allocate pages for new processes). This can be "fixed" by resizing the swap partition. Try rebooting and running the `resize-swap` task with a larger size (maybe 2048 MB).
 {% endcall %}
 
-{% call details('<i>If not needed wifi/bluetooth can be disabled on the PI to save power. This might be required if you have a limited power supply.</i>') %}
+{% call details("<i>If not needed wifi/bluetooth can be disabled on the PI to save power. This might be required if you have a limited power supply.</i>") %}
 In `/boot/config.txt` add the following two lines and reboot:
 ```
 dtoverlay=disable-wifi
@@ -162,12 +161,18 @@ dtoverlay=disable-bt
 ```
 {% endcall %}
 
-{% call details('<i>How to add a new service?</i>') %}
+{% call details("<i>How to add a new service?</i>") %}
 You'll need to create an entry in `services.yml` with all the associated fields and add an entry in the docker file and optionally in homer's config. Make sure to wrap these in a jinja if enabled conditional to be able to easily enable/disable the service. 
+{% endcall %}
+
+{% call details("<i>I can't see a service's memory consumption!</i>") %}
+If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, you'll probably need to enable the cgroup memory manager by adding `cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1` to your `/boot/cmdline.txt` file. See [here](https://github.com/docker/for-linux/issues/1112) for more info.
 {% endcall %}
 
 ## Changelog
 
 Most recent on top:
+
+- Add transmission configuration task and associated files. Now all *arrs can see the directory transmission downloads to as it's in `/media/downloads`.
 
 - Change volumes for *arr stack to enable hardlinks. Removed all references to individual media folders, i.e:`{% raw %}{{ MEDIA_REMOTE_ROOT }}/tv:/tv{% endraw %}` for tv, movies, music, and downloads and replaced them with one volume:`{% raw %}{{ MEDIA_REMOTE_ROOT }}:/media{% endraw %}`.
