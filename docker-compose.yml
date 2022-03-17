@@ -76,7 +76,7 @@ services:
       - TZ=America/Chicago
       - DEFAULT_WORKSPACE=/home
     volumes:
-      - {{ SERVICES_REMOTE_ROOT }}/vscode:/config
+      - {{ SERVICES_REMOTE_ROOT }}/code-server:/config
       - ~/workspace:/home
       - {{ SERVICES_REMOTE_ROOT }}/homer/:/home/homer
     ports:

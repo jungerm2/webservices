@@ -173,6 +173,8 @@ If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, 
 
 Most recent on top:
 
+- Add backup tasks for all services. Rename `code-server` volume.
+
 - Fix (G)UID for transmission. Add container name field for `gluetun`, `watchtower`, and cronjob for updating containers with `watchtower`. Switch WebUI to flood for transmission (*much* better). 
 
 - Add transmission configuration task and associated files. Now all *arrs can see the directory transmission downloads to as it's in `/media/downloads`.

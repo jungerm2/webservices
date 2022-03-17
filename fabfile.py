@@ -1,22 +1,32 @@
 # Run with: fab <task> -H <user>@<addr> --prompt-for-login-password
-import itertools
-import re
-import io
-import sys
-import json
+import configparser
+import datetime
 import inspect
+import io
+import itertools
+import json
+import posixpath
+import re
+import sys
+import time
 import xml.etree.ElementTree as ET
+from functools import partial
 from pathlib import Path
+from stat import S_ISDIR, S_ISREG
+from zipfile import ZipFile, ZipInfo
 
-import keyring
-import requests
+import dateutil
+import dateutil.parser
+import dateutil.tz
 import fabric.main
 import invoke.program
-from fabric import task
-from ruamel.yaml import YAML
+import keyring
+import requests
 from bs4 import BeautifulSoup
+from fabric import task
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-
+from ruamel.yaml import YAML
+from tqdm.auto import tqdm
 
 # GLOBAL DEFAULTS
 
@@ -29,6 +39,7 @@ DCP = f"docker-compose -f {COMPOSE_REMOTE_ROOT}/{COMPOSE_FILE}"
 MEDIA_REMOTE_ROOT = "/mnt/mybook/srv/media/"
 
 LOCAL_ROOT = "."
+BACKUP_DIR = "backup"
 PROFILE_FILE = ".profile"
 SERVICES_FILE = "services.yml"
 HOMER_FILE = "homer-config.yml"
@@ -39,6 +50,7 @@ COMPOSE_PATH = Path(LOCAL_ROOT) / COMPOSE_FILE
 PROFILE_PATH = Path(LOCAL_ROOT) / PROFILE_FILE
 HOMER_PATH = Path(LOCAL_ROOT) / HOMER_FILE
 TRANSMISSION_PATH = Path(LOCAL_ROOT) / TRANSMISSION_FILE
+BACKUP_PATH = Path(LOCAL_ROOT) / BACKUP_DIR
 
 
 # Helper Functions
@@ -106,11 +118,60 @@ def load_service_config(services_config=None, root=None):
     return {k.replace("-", "_"): v for k, v in services.items()}
 
 
-def read_file(c, path, encoding="utf-8"):
+def read_file(c, path, encoding="utf-8", raw=False):
     """Read remote file into a memory buffer"""
     f = io.BytesIO()
     c.get(path, f)
-    return f.getvalue().decode(encoding)
+    return f.getvalue().decode(encoding) if not raw else f.getvalue()
+
+
+def total_files(c, dir):
+    return int(c.run(f"find {dir} -type f | wc -l", hide=True).stdout)
+
+
+def get_xml_value(c, path, key, encoding="utf-8", default=None):
+    """Given a path to a remote XML file and a key, retrieve it's value."""
+    try:
+        content = read_file(c, path, encoding=encoding)
+        return ET.fromstring(content).find(key).text
+    except FileNotFoundError:
+        return default
+
+
+def remote_walk(c, root, exclude_dirs=None):
+    """Like os.walk but for the remote host!"""
+    exclude_dirs = set(exclude_dirs or [])
+    root = c.sftp().normalize(root)
+    for entry in c.sftp().listdir(root):
+        pathname = posixpath.join(root, entry)
+        mode = c.sftp().stat(pathname).st_mode
+        if S_ISDIR(mode):
+            # It's a directory!
+            if pathname not in exclude_dirs:
+                yield from remote_walk(c, pathname, exclude_dirs=exclude_dirs)
+        elif S_ISREG(mode):
+            # It's a file!
+            yield pathname
+
+
+def generic_backup(
+    c, root, service, pbar=True, excluded=None, compressed=False, verbose=True
+):
+    if verbose:
+        print(f"Downloading {service} backup from {root}...")
+    pbar = partial(tqdm, total=total_files(c, root)) if pbar else lambda x: x
+
+    if compressed:
+        with ZipFile(f"{BACKUP_PATH}/{service}.zip", "w") as archive:
+            for path in pbar(remote_walk(c, root, exclude_dirs=excluded)):
+                archive.writestr(
+                    ZipInfo(str(Path(path).relative_to(root))),
+                    read_file(c, path, raw=True),
+                )
+
+    else:
+        for path in pbar(remote_walk(c, root, exclude_dirs=excluded)):
+            c.get(path, str(BACKUP_PATH / service / Path(path).relative_to(root)))
 
 
 def get_service_compose(service, dcp_path=None):
@@ -225,11 +286,9 @@ def dcp_services(c, verbose=True):
 @task(aliases=["dcp_ls_up"])
 def dcp_running_services(c, verbose=True):
     """List running services on remote host"""
-    running = [
-        service
-        for service in dcp_services(c, verbose=False)
-        if c.run(f"docker-compose top {service}", hide=True).stdout
-    ]
+    running = c.run(
+        f'docker-compose ps --services --filter "status=running"', hide=True
+    ).stdout.splitlines()
     if verbose:
         print(
             f"Running services are: {', '.join(running)}."
@@ -253,6 +312,129 @@ def set_swap_size(c, size=None):
     c.sudo("dphys-swapfile setup")
     c.sudo("dphys-swapfile swapon")
     print("Please reboot host for changes to take effect.")
+
+
+@task
+def get_arrkey(c, service, encoding="utf-8"):
+    """Retrieve API key for an *arr service"""
+    # Special case for Bazarr because it's API is not compliant
+    if service.lower() == "bazarr":
+        conf = configparser.ConfigParser()
+        conf.read_string(
+            read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini")
+        )
+        return conf.get("auth", "apikey", fallback=None) or ""
+    return get_xml_value(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",
+        "ApiKey",
+        encoding=encoding,
+        default="",
+    )
+
+
+@task
+def get_arrport(c, service, encoding="utf-8"):
+    """Retrieve port for an *arr service"""
+    # Special case for Bazarr because it's API is not compliant
+    if service.lower() == "bazarr":
+        conf = configparser.ConfigParser()
+        conf.read_string(
+            read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini")
+        )
+        return conf.get("general", "port", fallback=None) or ""
+    return get_xml_value(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",
+        "Port",
+        encoding=encoding,
+        default="",
+    )
+
+
+@task
+def get_arrbackup_path(c, service, port, apikey, max_staleness=48, sleep=10, retries=3):
+    """Return path of a recent *arr backup, create a new one if needed"""
+    # The path returned is a URL path, except for bazarr when it's just a filename...
+    urls = {
+        "default": {
+            "list": f"http://{c.host}:{port}/api/v1/system/backup",
+            "create": f"http://{c.host}:{port}/api/v1/command",
+        },
+        "radarr": {
+            "list": f"http://{c.host}:{port}/api/v3/system/backup",
+            "create": f"http://{c.host}:{port}/api/v3/command",
+        },
+        "sonarr": {
+            "list": f"http://{c.host}:{port}/api/v3/system/backup",
+            "create": f"http://{c.host}:{port}/api/v3/command",
+        },
+        "bazarr": {
+            "list": f"http://{c.host}:{port}/api/system/backups",
+            "create": f"http://{c.host}:{port}/api/system/backups",
+        },
+    }
+    urls = urls.get(service.lower(), urls["default"])
+
+    def list_backups():
+        """Call *arr API, get list of backups (most recent first)"""
+        response = requests.get(urls["list"], headers={"X-Api-Key": apikey}, json={})
+        response.raise_for_status()
+        return response.json()
+
+    def create_backup():
+        """Call *arr API, trigger backup creation"""
+        print(f"Creating backup for {service}...")
+        response = requests.post(
+            urls["create"], headers={"X-Api-Key": apikey}, json={"name": "Backup"}
+        )
+        response.raise_for_status()
+        return response.json() if response.content else {}  # bazaar again...
+
+    if retries <= 0:
+        raise RuntimeError("Cannot create or find suitable backup!")
+
+    if response := list_backups():
+        # Again, Bazarr plays weird. It's response is not a list but a dict with key data
+        if type(response) is list:
+            stale = False
+            timestamp = response[0].get("time")
+            timestamp = dateutil.parser.parse(timestamp)
+        else:
+            if response["data"]:
+                stale = False
+                timestamp = response["data"][0].get("date")
+                timestamp = dateutil.parser.parse(timestamp).replace(
+                    tzinfo=dateutil.tz.UTC
+                )
+            else:
+                stale = True
+                timestamp = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=dateutil.tz.UTC)
+
+        now = datetime.datetime.now(dateutil.tz.UTC)
+        if stale or now - timestamp > datetime.timedelta(hours=max_staleness):
+            # If they are all stale, create one
+            create_backup()
+            time.sleep(sleep)
+        else:
+            return (
+                response[0]["path"]
+                if type(response) is list
+                else response["data"][0]["filename"]
+            )
+    else:
+        # If none exist, create one
+        create_backup()
+        time.sleep(sleep)
+    return get_arrbackup_path(
+        c,
+        service,
+        port,
+        apikey,
+        max_staleness=max_staleness,
+        sleep=sleep,
+        retries=retries - 1,
+    )
 
 
 @task
@@ -343,16 +525,6 @@ def configure_plex(c, services_config=None, root=None):
     c.run(f"{DCP} stop plex")
 
 
-@task
-def get_arrkey(c, service_path, encoding="utf-8"):
-    """Retrieve API key for a *arr service"""
-    try:
-        content = read_file(c, f"{service_path}/config.xml", encoding=encoding)
-        return ET.fromstring(content).find("ApiKey").text
-    except FileNotFoundError:
-        return ""
-
-
 @task(aliases=["config_homer"])
 def configure_homer(c, services_config=None, root=None):
     """Fetch and add apikey to homer dashboard for *arr apps"""
@@ -365,9 +537,7 @@ def configure_homer(c, services_config=None, root=None):
 
     # Get apikeys (if exists)
     arrs = [service for service in services if service.lower().endswith("arr")]
-    arrkeys = {
-        service: get_arrkey(c, f"/{SERVICES_REMOTE_ROOT}/{service}") for service in arrs
-    }
+    arrkeys = {service: get_arrkey(c, service) for service in arrs}
     arrkeys = {service: key for service, key in arrkeys.items() if key}
 
     for service, key in arrkeys.items():
@@ -470,6 +640,133 @@ def render_readme(_, services_config=None, root=None, dcp_path=None):
     )
     with open("README.md", "w") as f:
         f.write(readme)
+
+
+@task
+def backup_arrs(c, services_config=None, root=None):
+    """Copy remote *arr backup directories to `backup/`"""
+    services = load_service_config(services_config, root)
+
+    # Get api keys and ports
+    arrs = set(service for service in services if service.lower().endswith("arr"))
+    running_arrs = set(
+        service
+        for service in dcp_running_services(c, verbose=False)
+        if service.lower().endswith("arr")
+    )
+
+    if missing_arrs := arrs - running_arrs:
+        print(f"WARNING: Skipping {missing_arrs} as they are not running!")
+
+    running_arrs = {
+        service: (
+            get_arrkey(c, service),
+            get_arrport(c, service),
+        )
+        for service in running_arrs
+    }
+
+    for service, (apikey, port) in running_arrs.items():
+        backup = Path(
+            get_arrbackup_path(
+                c,
+                service,
+                port,
+                apikey,
+                max_staleness=48,
+                sleep=10,
+                retries=3,
+            )
+        ).name
+
+        for path in remote_walk(c, f"{SERVICES_REMOTE_ROOT}/{service}"):
+            if path.endswith(backup):
+                print(f"Downloading {service} backup from {path}...")
+                c.get(path, str(BACKUP_PATH / backup))
+                break
+        else:
+            print(f"No backup found for {service}!!")
+
+
+@task
+def backup_plex(c):
+    """Make a backup of plex data while skipping cache data"""
+    generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/plex",
+        "plex",
+        excluded=["/srv/plex/Library/Application Support/Plex Media Server/Cache/"],
+        compressed=True,
+    )
+
+
+@task
+def backup_transmission(c):
+    """Make a backup of transmission data"""
+    generic_backup(
+        c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True
+    )
+
+
+@task
+def backup_tautulli(c):
+    """Make a backup of tautulli data"""
+    generic_backup(c, f"{SERVICES_REMOTE_ROOT}/tautulli", "tautulli", compressed=True)
+
+
+@task
+def backup_pihole(c):
+    """Make a backup of pihole data"""
+    generic_backup(c, f"{SERVICES_REMOTE_ROOT}/pihole", "pihole", compressed=True)
+
+
+@task
+def backup_ombi(c):
+    """Make a backup of ombi data"""
+    generic_backup(c, f"{SERVICES_REMOTE_ROOT}/ombi", "ombi", compressed=True)
+
+
+@task
+def backup_gluetun(c):
+    """Make a backup of gluetun data"""
+    generic_backup(c, f"{SERVICES_REMOTE_ROOT}/gluetun", "gluetun", compressed=True)
+
+
+@task
+def backup_homer(c):
+    """Make a backup of homer data"""
+    generic_backup(c, f"{SERVICES_REMOTE_ROOT}/homer", "homer", compressed=True)
+
+
+@task
+def backup_code_server(c):
+    """Make a backup of code-server data"""
+    generic_backup(
+        c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True
+    )
+
+
+@task
+def backup_wireguard(c):
+    """Make a backup of wireguard data"""
+    generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True)
+
+
+@task
+def backup(c, services_config=None, root=None):
+    """Run all backup subtasks"""
+    # Call dependencies, this should be done via pre-tasks
+    # but theres a bug on windows (https://github.com/fabric/fabric/issues/2202)
+    backup_arrs(c, services_config, root)
+    backup_code_server(c)
+    backup_gluetun(c)
+    backup_homer(c)
+    backup_ombi(c)
+    backup_pihole(c)
+    backup_plex(c)
+    backup_tautulli(c)
+    backup_transmission(c)
+    backup_wireguard(c)
 
 
 @task(incrementable=["verbose"])

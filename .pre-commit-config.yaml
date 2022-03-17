@@ -8,6 +8,12 @@ repos:
     pass_filenames: False
     language: system
 
+  - id: isort
+    name: ISort
+    entry: isort .
+    pass_filenames: False
+    language: system
+
   - id: fab-render-readme
     name: Render README
     entry: fab render-readme

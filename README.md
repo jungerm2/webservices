@@ -72,6 +72,17 @@ The main setup script lives inside [`fabfile.py`](fabfile.py). You can view all 
 Available tasks:
 
   apt-update                                          (apt) Update and upgrade system
+  backup                                              Run all backup subtasks
+  backup-arrs                                         Copy remote *arr backup directories to `backup/`
+  backup-code-server                                  Make a backup of code-server data
+  backup-gluetun                                      Make a backup of gluetun data
+  backup-homer                                        Make a backup of homer data
+  backup-ombi                                         Make a backup of ombi data
+  backup-pihole                                       Make a backup of pihole data
+  backup-plex                                         Make a backup of plex data while skipping cache data
+  backup-tautulli                                     Make a backup of tautulli data
+  backup-transmission                                 Make a backup of transmission data
+  backup-wireguard                                    Make a backup of wireguard data
   configure-homer (config-homer)                      Fetch and add apikey to homer dashboard for *arr apps
   configure-plex (config-plex)                        Claim plex server, see: `https://www.plex.tv/claim/`
   configure-transmission (config-transmission)        Upload transmission's `settings.json` to host
@@ -79,7 +90,9 @@ Available tasks:
   dcp-running-services (dcp-ls-up)                    List running services on remote host
   dcp-services (dcp-ls)                               List services in remote's compose file
   deploy                                              Install services with docker-compose
-  get-arrkey                                          Retrieve API key for a *arr service
+  get-arrbackup-path                                  Return path of a recent *arr backup, create a new one if needed
+  get-arrkey                                          Retrieve API key for an *arr service
+  get-arrport                                         Retrieve port for an *arr service
   install-ctop                                        Install top-like interface for container metrics
   install-docker                                      Install docker if not present
   install-docker-compose                              Install docker-compose if not present
@@ -181,7 +194,7 @@ transmission:
 
 # MAINTENANCE & MONITORING
 watchtower:
-  enable: false
+  enable: true
   github: https://github.com/containrrr/watchtower
 glances:
   enable: true
@@ -297,7 +310,7 @@ code-server:
     - TZ=America/Chicago
     - DEFAULT_WORKSPACE=/home
   volumes:
-    - {{ SERVICES_REMOTE_ROOT }}/vscode:/config
+    - {{ SERVICES_REMOTE_ROOT }}/code-server:/config
     - ~/workspace:/home
     - {{ SERVICES_REMOTE_ROOT }}/homer/:/home/homer
   ports:
@@ -592,6 +605,8 @@ If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, 
 ## Changelog
 
 Most recent on top:
+
+- Add backup tasks for all services. Rename `code-server` volume.
 
 - Fix (G)UID for transmission. Add container name field for `gluetun`, `watchtower`, and cronjob for updating containers with `watchtower`. Switch WebUI to flood for transmission (*much* better). 
 

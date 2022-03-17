@@ -66,7 +66,7 @@ transmission:
 
 # MAINTENANCE & MONITORING
 watchtower:
-  enable: false
+  enable: true
   github: https://github.com/containrrr/watchtower
 glances:
   enable: true
