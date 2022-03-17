@@ -1,12 +1,12 @@
 # Comments work here as we parse this as YAML and save it to host as JSON
 {
-    "alt-speed-down": 50,
+    "alt-speed-down": 10000,
     "alt-speed-enabled": true,
     "alt-speed-time-begin": 960,
     "alt-speed-time-day": 127,
     "alt-speed-time-enabled": true,
     "alt-speed-time-end": 60,
-    "alt-speed-up": 50,
+    "alt-speed-up": 2000,
     "bind-address-ipv4": "0.0.0.0",
     "bind-address-ipv6": "::",
     "blocklist-enabled": false,

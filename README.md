@@ -251,7 +251,8 @@ homer:
   ports:
     - 80:8080
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   restart: unless-stopped
 ```
@@ -270,7 +271,8 @@ pihole:
     - "53:53/udp"
     - "8081:80/tcp"
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
     - WEBPASSWORD={{ pihole.webpassword }}
   volumes:
@@ -290,7 +292,8 @@ code-server:
   image: lscr.io/linuxserver/code-server
   container_name: code-server
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
     - DEFAULT_WORKSPACE=/home
   volumes:
@@ -332,7 +335,8 @@ ombi:
   image: lscr.io/linuxserver/ombi
   container_name: ombi
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/ombi:/config
@@ -351,7 +355,8 @@ prowlarr:
   image: lscr.io/linuxserver/prowlarr:develop
   container_name: prowlarr
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/prowlarr:/config
@@ -368,7 +373,8 @@ radarr:
   image: lscr.io/linuxserver/radarr
   container_name: radarr
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/radarr:/config
@@ -386,7 +392,8 @@ sonarr:
   image: lscr.io/linuxserver/sonarr
   container_name: sonarr
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/sonarr:/config
@@ -404,7 +411,8 @@ lidarr:
   image: lscr.io/linuxserver/lidarr
   container_name: lidarr
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/lidarr:/config
@@ -422,7 +430,8 @@ bazarr:
   image: lscr.io/linuxserver/bazarr
   container_name: bazarr
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/bazarr:/config
@@ -450,6 +459,7 @@ depends_on: [ "gluetun", ]
 ```yaml
 gluetun:
   image: qmcgaw/gluetun
+  container_name: gluetun
   cap_add:
     - NET_ADMIN
   volumes:
@@ -472,9 +482,10 @@ transmission:
   image: ghcr.io/linuxserver/transmission
   container_name: transmission
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
-    - TRANSMISSION_WEB_HOME=/combustion-release/
+    - TRANSMISSION_WEB_HOME=/flood-for-transmission/
     - USER={{ transmission.user }}
     - PASS={{ transmission.password }}
   volumes:
@@ -491,8 +502,14 @@ transmission:
 ```yaml
 watchtower:
   image: containrrr/watchtower
+  container_name: watchtower
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
+  environment:
+    # This cron expression needs to be 6 fields long, not the default 5
+    # "At 04:00 AM, only on Monday", see: https://crontab.cronhub.io/
+    - WATCHTOWER_SCHEDULE=0 0 4 * * 1
+    - TZ=America/Chicago
 ```
 
 </details>
@@ -506,7 +523,8 @@ glances:
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
     - GLANCES_OPT=-w
   ports:
@@ -526,7 +544,8 @@ tautulli:
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/tautulli:/config
   environment:
-    - user=$DOCKER_USER
+    - PUID=$PUID
+    - PGID=$PGID
     - TZ=America/Chicago
   ports:
     - 8181:8181
@@ -573,6 +592,8 @@ If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, 
 ## Changelog
 
 Most recent on top:
+
+- Fix (G)UID for transmission. Add container name field for `gluetun`, `watchtower`, and cronjob for updating containers with `watchtower`. Switch WebUI to flood for transmission (*much* better). 
 
 - Add transmission configuration task and associated files. Now all *arrs can see the directory transmission downloads to as it's in `/media/downloads`.
 

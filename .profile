@@ -9,7 +9,9 @@ export DOCKER_USER="$(id -u):$(id -g)"
 export PUID="$(id -u)"
 export PGID="$(id -g)"
 
+# Custom convenience aliases
 alias lzd='lazydocker'
+alias gits='git status'
 
 # Taken from https://perfectmediaserver.com/index.html
 # Tail last 50 lines of docker logs
