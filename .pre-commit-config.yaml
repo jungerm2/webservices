@@ -2,15 +2,9 @@ fail_fast: true
 repos:
 - repo: local
   hooks:
-  - id: black
-    name: Blacken
-    entry: black .
-    pass_filenames: False
-    language: system
-
-  - id: isort
-    name: ISort
-    entry: isort .
+  - id: format
+    name: Blacken & ISort
+    entry: ["black .", "isort .", "black ."]
     pass_filenames: False
     language: system
 

@@ -71,37 +71,39 @@ The main setup script lives inside [`fabfile.py`](fabfile.py). You can view all 
 > fab --list
 Available tasks:
 
-  apt-update                                          (apt) Update and upgrade system
-  backup                                              Run all backup subtasks
-  backup-arrs                                         Copy remote *arr backup directories to `backup/`
-  backup-code-server                                  Make a backup of code-server data
-  backup-gluetun                                      Make a backup of gluetun data
-  backup-homer                                        Make a backup of homer data
-  backup-ombi                                         Make a backup of ombi data
-  backup-pihole                                       Make a backup of pihole data
-  backup-plex                                         Make a backup of plex data while skipping cache data
-  backup-tautulli                                     Make a backup of tautulli data
-  backup-transmission                                 Make a backup of transmission data
-  backup-wireguard                                    Make a backup of wireguard data
-  configure-homer (config-homer)                      Fetch and add apikey to homer dashboard for *arr apps
-  configure-plex (config-plex)                        Claim plex server, see: `https://www.plex.tv/claim/`
-  configure-transmission (config-transmission)        Upload transmission's `settings.json` to host
-  configure-wireguard (config-wg, config-wireguard)   Upload wireguard config (i.e: wg0.conf) to host
-  dcp-running-services (dcp-ls-up)                    List running services on remote host
-  dcp-services (dcp-ls)                               List services in remote's compose file
-  deploy                                              Install services with docker-compose
-  get-arrbackup-path                                  Return path of a recent *arr backup, create a new one if needed
-  get-arrkey                                          Retrieve API key for an *arr service
-  get-arrport                                         Retrieve port for an *arr service
-  install-ctop                                        Install top-like interface for container metrics
-  install-docker                                      Install docker if not present
-  install-docker-compose                              Install docker-compose if not present
-  install-lazydocker (install-lzd)                    Install the lazy docker manager
-  install-py3                                         Install python3 (and pip!) if not present
-  reboot                                              Reboot host machine
-  render-readme                                       Update code segments in the README file (runs on local)
-  set-swap-size (resize-swap)                         Set swap partition size on remote (in MB)
-  verify-vpn                                          Test that the VPN is connected and it's IP isn't local
+  backup.all (backup, backup.backup)           Run all backup subtasks
+  backup.arr-path                              Return path of a recent *arr backup, create a new one if needed
+  backup.arrs                                  Copy remote *arr backup directories to `backup/`
+  backup.code-server                           Make a backup of code-server data
+  backup.gluetun                               Make a backup of gluetun data
+  backup.homer                                 Make a backup of homer data
+  backup.ombi                                  Make a backup of ombi data
+  backup.pihole                                Make a backup of pihole data
+  backup.plex                                  Make a backup of plex data while skipping cache data
+  backup.tautulli                              Make a backup of tautulli data
+  backup.transmission                          Make a backup of transmission data
+  backup.wireguard                             Make a backup of wireguard data
+  configure.homer                              Fetch and add apikey to homer dashboard for *arr apps
+  configure.plex                               Claim plex server, see: `https://www.plex.tv/claim/`
+  configure.transmission (configure.transm)    Upload transmission's `settings.json` to host
+  configure.wireguard (configure.wg)           Upload wireguard config (i.e: wg0.conf) to host
+  install.all (install, install.install)
+  install.ctop                                 Install top-like interface for container metrics
+  install.docker                               Install docker if not present
+  install.docker-compose (install.dcp)         Install docker-compose if not present
+  install.lazydocker (install.lzd)             Install the lazy docker manager
+  install.python3 (install.py3)                Install python3 (and pip!) if not present
+  misc.apt-update                              (apt) Update and upgrade system
+  misc.dcp-running-services (misc.dcp-ls-up)   List running services on remote host
+  misc.dcp-services (misc.dcp-ls)              List services in remote's compose file
+  misc.deploy                                  Install services with docker-compose
+  misc.get-arrkey                              Retrieve API key for an *arr service
+  misc.get-arrport                             Retrieve port for an *arr service
+  misc.reboot                                  Reboot host machine
+  misc.render-readme                           Update code segments in the README file (runs on local)
+  misc.set-swap-size (misc.resize-swap)        Set swap partition size on remote (in MB)
+  misc.speedtest                               Run speedtest in given container, or host if empty
+  misc.verify-vpn                              Test that the VPN is connected and it's IP isn't local
 
 
 ```
@@ -602,9 +604,32 @@ If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, 
 
 </details>
 
+<details>
+    <summary><i>If running on a laptop: Closing the lid/screen shutsdown the server.</i></summary>
+
+This will depend on which distro you use. For ubuntu, [see here](https://askubuntu.com/questions/141866/keep-ubuntu-server-running-on-a-laptop-with-the-lid-closed).
+
+</details>
+
+<details>
+    <summary><i>Graphics card not found!</i></summary>
+
+This is likely a driver issue. Check if the card is accessible with `sudo lshw -c video`. If it's there, you [can try this](https://linuxconfig.org/how-to-install-the-nvidia-drivers-on-ubuntu-19-04-disco-dingo-linux).
+
+</details>
+
+<details>
+    <summary><i>My headless install now has a GUI</i></summary>
+
+Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.com/questions/1250026) for a fix. 
+
+</details>
+
 ## Changelog
 
 Most recent on top:
+
+- Refactor all fabric code into a package, tasks are spread across multiple files for easy maintenance. Add a few tasks such as speedtest (and required dockerfile).
 
 - Add backup tasks for all services. Rename `code-server` volume.
 

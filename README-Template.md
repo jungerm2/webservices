@@ -169,9 +169,23 @@ You'll need to create an entry in `services.yml` with all the associated fields 
 If `lazy-docker` or `docker stats --no-stream` doesn't show memory consumption, you'll probably need to enable the cgroup memory manager by adding `cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1` to your `/boot/cmdline.txt` file. See [here](https://github.com/docker/for-linux/issues/1112) for more info.
 {% endcall %}
 
+{% call details("<i>If running on a laptop: Closing the lid/screen shutsdown the server.</i>") %}
+This will depend on which distro you use. For ubuntu, [see here](https://askubuntu.com/questions/141866/keep-ubuntu-server-running-on-a-laptop-with-the-lid-closed).
+{% endcall %}
+
+{% call details("<i>Graphics card not found!</i>") %}
+This is likely a driver issue. Check if the card is accessible with `sudo lshw -c video`. If it's there, you [can try this](https://linuxconfig.org/how-to-install-the-nvidia-drivers-on-ubuntu-19-04-disco-dingo-linux).
+{% endcall %}
+
+{% call details("<i>My headless install now has a GUI</i>") %}
+Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.com/questions/1250026) for a fix. 
+{% endcall %}
+
 ## Changelog
 
 Most recent on top:
+
+- Refactor all fabric code into a package, tasks are spread across multiple files for easy maintenance. Add a few tasks such as speedtest (and required dockerfile).
 
 - Add backup tasks for all services. Rename `code-server` volume.
 

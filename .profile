@@ -13,6 +13,9 @@ export PGID="$(id -g)"
 alias lzd='lazydocker'
 alias gits='git status'
 
+# Check battery level (only tested on ubuntu), see: https://askubuntu.com/questions/69556
+alias bat='upower -i $(upower -e | grep BAT) | grep --color=never -E "state|to\ full|to\ empty|percentage"'
+
 # Taken from https://perfectmediaserver.com/index.html
 # Tail last 50 lines of docker logs
 alias dtail='docker logs -tf --tail='50' '
