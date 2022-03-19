@@ -1,5 +1,7 @@
 from pathlib import Path
 
+MAX_LINE_LENGTH = 121
+
 SERVICES_REMOTE_ROOT = "/srv"
 COMPOSE_REMOTE_ROOT = "~"
 COMPOSE_FILE = "docker-compose.yml"

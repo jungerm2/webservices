@@ -5,6 +5,7 @@ from fabfile.helpers import _install_docker, _install_docker_compose, _install_p
 
 @task(default=True, aliases=["install"])
 def all(c, force=False):
+    """Run all Install sub-tasks"""
     ctop(c, force=force)
     docker(c, force=force)
     docker_compose(c, force=force)
@@ -16,9 +17,7 @@ def all(c, force=False):
 def ctop(c, force=False):
     """Install top-like interface for container metrics"""
     if c.run("ctop -v", hide=True, warn=True).failed or force:
-        c.sudo(
-            "echo 'deb http://packages.azlux.fr/debian/ buster main' | sudo tee /etc/apt/sources.list.d/azlux.list"
-        )
+        c.sudo("echo 'deb http://packages.azlux.fr/debian/ buster main' | sudo tee /etc/apt/sources.list.d/azlux.list")
         c.sudo("wget -qO - https://azlux.fr/repo.gpg.key | sudo apt-key add -")
         c.sudo("apt update")
         c.sudo("apt install docker-ctop")

@@ -13,16 +13,14 @@ from tqdm.auto import tqdm
 
 from fabfile.defaults import BACKUP_PATH, SERVICES_REMOTE_ROOT
 from fabfile.helpers import (
-    _misc_dcp_running_services,
-    _misc_get_arrkey,
-    _misc_get_arrport,
+    _status_dcp_running_services,
+    _status_get_arrkey,
+    _status_get_arrport,
 )
 from fabfile.utils import _load_service_config, _read_file, _remote_walk, _total_files
 
 
-def _generic_backup(
-    c, root, service, pbar=True, excluded=None, compressed=False, verbose=True
-):
+def _generic_backup(c, root, service, pbar=True, excluded=None, compressed=False, verbose=True):
     if verbose:
         print(f"Downloading {service} backup from {root}...")
     pbar = partial(tqdm, total=_total_files(c, root)) if pbar else lambda x: x
@@ -41,9 +39,7 @@ def _generic_backup(
 
 
 @task
-def arr_path(
-    c, service, port, apikey, max_staleness=48, sleep=10, retries=3, force=False
-):
+def arr_path(c, service, port, apikey, max_staleness=48, sleep=10, retries=3, force=False):
     """Return path of a recent *arr backup, create a new one if needed"""
     # The path returned is a URL path, except for bazarr when it's just a filename...
     urls = {
@@ -75,9 +71,7 @@ def arr_path(
     def create_backup():
         """Call *arr API, trigger backup creation"""
         print(f"Creating backup for {service}...")
-        response = requests.post(
-            urls["create"], headers={"X-Api-Key": apikey}, json={"name": "Backup"}
-        )
+        response = requests.post(urls["create"], headers={"X-Api-Key": apikey}, json={"name": "Backup"})
         response.raise_for_status()
         return response.json() if response.content else {}  # bazaar again...
 
@@ -94,9 +88,7 @@ def arr_path(
             if response["data"]:
                 stale = False
                 timestamp = response["data"][0].get("date")
-                timestamp = dateutil.parser.parse(timestamp).replace(
-                    tzinfo=dateutil.tz.UTC
-                )
+                timestamp = dateutil.parser.parse(timestamp).replace(tzinfo=dateutil.tz.UTC)
             else:
                 stale = True
                 timestamp = datetime.datetime(1970, 1, 1, 0, 0, tzinfo=dateutil.tz.UTC)
@@ -107,11 +99,7 @@ def arr_path(
             create_backup()
             time.sleep(sleep)
         else:
-            return (
-                response[0]["path"]
-                if type(response) is list
-                else response["data"][0]["filename"]
-            )
+            return response[0]["path"] if type(response) is list else response["data"][0]["filename"]
     else:
         # If none exist, create one
         create_backup()
@@ -143,19 +131,15 @@ def arrs(
 
     # Get api keys and ports
     arrs = set(service for service in services if service.lower().endswith("arr"))
-    running_arrs = set(
-        service
-        for service in _misc_dcp_running_services(c)
-        if service.lower().endswith("arr")
-    )
+    running_arrs = set(service for service in _status_dcp_running_services(c) if service.lower().endswith("arr"))
 
     if missing_arrs := arrs - running_arrs:
         print(f"WARNING: Skipping {missing_arrs} as they are not running!")
 
     running_arrs = {
         service: (
-            _misc_get_arrkey(c, service),
-            _misc_get_arrport(c, service),
+            _status_get_arrkey(c, service),
+            _status_get_arrport(c, service),
         )
         for service in running_arrs
     }
@@ -186,9 +170,7 @@ def arrs(
 @task
 def code_server(c):
     """Make a backup of code-server data"""
-    _generic_backup(
-        c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True
-    )
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True)
 
 
 @task
@@ -236,17 +218,13 @@ def tautulli(c):
 @task
 def transmission(c):
     """Make a backup of transmission data"""
-    _generic_backup(
-        c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True
-    )
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True)
 
 
 @task
 def wireguard(c):
     """Make a backup of wireguard data"""
-    _generic_backup(
-        c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True
-    )
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True)
 
 
 @task(aliases=["backup"], default=True)

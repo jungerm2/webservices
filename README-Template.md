@@ -185,6 +185,8 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 
 Most recent on top:
 
+- Fix precommit hooks, split fabfile.misc into misc and status.
+
 - Refactor all fabric code into a package, tasks are spread across multiple files for easy maintenance. Add a few tasks such as speedtest (and required dockerfile).
 
 - Add backup tasks for all services. Rename `code-server` volume.

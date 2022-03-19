@@ -71,39 +71,41 @@ The main setup script lives inside [`fabfile.py`](fabfile.py). You can view all 
 > fab --list
 Available tasks:
 
-  backup.all (backup, backup.backup)           Run all backup subtasks
-  backup.arr-path                              Return path of a recent *arr backup, create a new one if needed
-  backup.arrs                                  Copy remote *arr backup directories to `backup/`
-  backup.code-server                           Make a backup of code-server data
-  backup.gluetun                               Make a backup of gluetun data
-  backup.homer                                 Make a backup of homer data
-  backup.ombi                                  Make a backup of ombi data
-  backup.pihole                                Make a backup of pihole data
-  backup.plex                                  Make a backup of plex data while skipping cache data
-  backup.tautulli                              Make a backup of tautulli data
-  backup.transmission                          Make a backup of transmission data
-  backup.wireguard                             Make a backup of wireguard data
-  configure.homer                              Fetch and add apikey to homer dashboard for *arr apps
-  configure.plex                               Claim plex server, see: `https://www.plex.tv/claim/`
-  configure.transmission (configure.transm)    Upload transmission's `settings.json` to host
-  configure.wireguard (configure.wg)           Upload wireguard config (i.e: wg0.conf) to host
-  install.all (install, install.install)
-  install.ctop                                 Install top-like interface for container metrics
-  install.docker                               Install docker if not present
-  install.docker-compose (install.dcp)         Install docker-compose if not present
-  install.lazydocker (install.lzd)             Install the lazy docker manager
-  install.python3 (install.py3)                Install python3 (and pip!) if not present
-  misc.apt-update                              (apt) Update and upgrade system
-  misc.dcp-running-services (misc.dcp-ls-up)   List running services on remote host
-  misc.dcp-services (misc.dcp-ls)              List services in remote's compose file
-  misc.deploy                                  Install services with docker-compose
-  misc.get-arrkey                              Retrieve API key for an *arr service
-  misc.get-arrport                             Retrieve port for an *arr service
-  misc.reboot                                  Reboot host machine
-  misc.render-readme                           Update code segments in the README file (runs on local)
-  misc.set-swap-size (misc.resize-swap)        Set swap partition size on remote (in MB)
-  misc.speedtest                               Run speedtest in given container, or host if empty
-  misc.verify-vpn                              Test that the VPN is connected and it's IP isn't local
+  backup.all (backup, backup.backup)               Run all backup subtasks
+  backup.arr-path                                  Return path of a recent *arr backup, create a new one if needed
+  backup.arrs                                      Copy remote *arr backup directories to `backup/`
+  backup.code-server                               Make a backup of code-server data
+  backup.gluetun                                   Make a backup of gluetun data
+  backup.homer                                     Make a backup of homer data
+  backup.ombi                                      Make a backup of ombi data
+  backup.pihole                                    Make a backup of pihole data
+  backup.plex                                      Make a backup of plex data while skipping cache data
+  backup.tautulli                                  Make a backup of tautulli data
+  backup.transmission                              Make a backup of transmission data
+  backup.wireguard                                 Make a backup of wireguard data
+  configure.homer                                  Fetch and add apikey to homer dashboard for *arr apps
+  configure.plex                                   Claim plex server, see: `https://www.plex.tv/claim/`
+  configure.transmission (configure.transm)        Upload transmission's `settings.json` to host
+  configure.wireguard (configure.wg)               Upload wireguard config (i.e: wg0.conf) to host
+  install.all (install, install.install)           Run all Install sub-tasks
+  install.ctop                                     Install top-like interface for container metrics
+  install.docker                                   Install docker if not present
+  install.docker-compose (install.dcp)             Install docker-compose if not present
+  install.lazydocker (install.lzd)                 Install the lazy docker manager
+  install.python3 (install.py3)                    Install python3 (and pip!) if not present
+  misc.apt-update                                  (apt) Update and upgrade system
+  misc.deploy                                      Install services with docker-compose
+  misc.format                                      Format (python) code on local/host machine at root
+  misc.reboot                                      Reboot host machine
+  misc.render-readme                               Update code segments in the README file (runs on local)
+  misc.set-swap-size (misc.resize-swap)            Set swap partition size on remote (in MB)
+  status.battery (status.bat)
+  status.dcp-running-services (status.dcp-ls-up)   List running services on remote host
+  status.dcp-services (status.dcp-ls)              List services in remote's compose file
+  status.get-arrkey                                Retrieve API key for an *arr service
+  status.get-arrport                               Retrieve port for an *arr service
+  status.speedtest                                 Run speedtest in given container, or host if empty
+  status.verify-vpn                                Test that the VPN is connected and it's IP isn't local
 
 
 ```
@@ -628,6 +630,8 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 ## Changelog
 
 Most recent on top:
+
+- Fix precommit hooks, split fabfile.misc into misc and status.
 
 - Refactor all fabric code into a package, tasks are spread across multiple files for easy maintenance. Add a few tasks such as speedtest (and required dockerfile).
 

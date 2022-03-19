@@ -3,13 +3,13 @@ repos:
 - repo: local
   hooks:
   - id: format
-    name: Blacken & ISort
-    entry: ["black .", "isort .", "black ."]
+    name: Format
+    entry: fab misc.format --check
     pass_filenames: False
     language: system
 
   - id: fab-render-readme
     name: Render README
-    entry: fab render-readme
+    entry: fab misc.render-readme
     pass_filenames: False
     language: system

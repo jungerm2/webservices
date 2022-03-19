@@ -2,6 +2,7 @@ import inspect
 import io
 import itertools
 import json
+import platform
 import posixpath
 import re
 from pathlib import Path
@@ -9,6 +10,7 @@ from stat import S_ISDIR, S_ISREG
 from xml.etree import ElementTree as ET
 
 import keyring
+from invoke import Context
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ruamel.yaml import YAML
 
@@ -50,17 +52,13 @@ def _put_mv(c, path_or_data, target_dir, raw=False, filename=None):
 
 
 def _get_py_version(c):
-    v = c.run(
-        "python -V || python3 -V || echo 'Default 0.0.0'", hide=True, warn=True
-    ).stdout.split(" ")[-1]
+    v = c.run("python -V || python3 -V || echo 'Default 0.0.0'", hide=True, warn=True).stdout.split(" ")[-1]
     return [int(i) for i in v.split(".")]
 
 
 def _get_jinja_env(root=None):
     # Create templating engine environment
-    return Environment(
-        loader=FileSystemLoader(root or LOCAL_ROOT), autoescape=select_autoescape()
-    )
+    return Environment(loader=FileSystemLoader(root or LOCAL_ROOT), autoescape=select_autoescape())
 
 
 def _load_service_config(services_config=None, root=None):
@@ -71,9 +69,7 @@ def _load_service_config(services_config=None, root=None):
 
     # Load services config, expand enable option
     services = YAML(typ="safe").load(services)
-    services = {
-        k: v if type(v) is not bool else {"enable": v} for k, v in services.items()
-    }
+    services = {k: v if type(v) is not bool else {"enable": v} for k, v in services.items()}
     return {k.replace("-", "_"): v for k, v in services.items()}
 
 
@@ -113,12 +109,20 @@ def _remote_walk(c, root, exclude_dirs=None):
             yield pathname
 
 
+def _run(c, command, **kwargs):
+    """Alternative to c.run which works on windows"""
+    # If running locally (i.e: no host was specified) then c
+    # is a context object and we should add replace_env=False.
+    # See: https://github.com/fabric/fabric/issues/2142
+    if type(c) is Context:
+        kwargs.update(replace_env=False)
+    return c.run(command, pty=platform.system() != "Windows", **kwargs)
+
+
 def _get_service_compose(service, dcp_path=None):
     """Given a service name, extract it's docker compose config as text"""
     with open(dcp_path or str(COMPOSE_PATH), "r") as f:
-        pattern = (
-            rf"{{%-?\s+if\s+{service.lower()}\.enable\s+%}}(.*?){{%-?\s+endif\s+%}}"
-        )
+        pattern = rf"{{%-?\s+if\s+{service.lower()}\.enable\s+%}}(.*?){{%-?\s+endif\s+%}}"
         matches = re.findall(pattern, f.read(), re.IGNORECASE | re.DOTALL)
         return inspect.cleandoc(matches[0]) if matches else "Compose not found!"
 

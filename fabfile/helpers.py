@@ -35,11 +35,7 @@ def _install_docker_compose(c, force=False):
 
 def _install_python3(c, force=False):
     """Install python3 (and pip!) if not present"""
-    if (
-        _get_py_version(c)[0] < 3
-        or c.run("python3 -m pip -V", hide=True, warn=True).failed
-        or force
-    ):
+    if _get_py_version(c)[0] < 3 or c.run("python3 -m pip -V", hide=True, warn=True).failed or force:
         c.sudo("apt-get install -y libffi-dev libssl-dev")
         c.sudo("apt-get install -y python3-dev")
         c.sudo("apt-get install -y python3 python3-pip ")
@@ -47,21 +43,17 @@ def _install_python3(c, force=False):
         print("Python3 is already installed, skipping...")
 
 
-def _misc_dcp_running_services(c):
+def _status_dcp_running_services(c):
     """List running services on remote host"""
-    return c.run(
-        f'docker-compose ps --services --filter "status=running"', hide=True
-    ).stdout.splitlines()
+    return c.run(f'docker-compose ps --services --filter "status=running"', hide=True).stdout.splitlines()
 
 
-def _misc_get_arrkey(c, service, encoding="utf-8"):
+def _status_get_arrkey(c, service, encoding="utf-8"):
     """Retrieve API key for an *arr service"""
     # Special case for Bazarr because it's API is not compliant
     if service.lower() == "bazarr":
         conf = configparser.ConfigParser()
-        conf.read_string(
-            _read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini")
-        )
+        conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
         return conf.get("auth", "apikey", fallback=None) or ""
     return _get_xml_value(
         c,
@@ -72,14 +64,12 @@ def _misc_get_arrkey(c, service, encoding="utf-8"):
     )
 
 
-def _misc_get_arrport(c, service, encoding="utf-8"):
+def _status_get_arrport(c, service, encoding="utf-8"):
     """Retrieve port for an *arr service"""
     # Special case for Bazarr because it's API is not compliant
     if service.lower() == "bazarr":
         conf = configparser.ConfigParser()
-        conf.read_string(
-            _read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini")
-        )
+        conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
         return conf.get("general", "port", fallback=None) or ""
     return _get_xml_value(
         c,
