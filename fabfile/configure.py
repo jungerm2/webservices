@@ -4,6 +4,7 @@ import keyring
 from fabric import task
 from ruamel.yaml import YAML
 
+from fabfile import status
 from fabfile.defaults import (
     COMPOSE_FILE,
     COMPOSE_PATH,
@@ -16,7 +17,6 @@ from fabfile.defaults import (
     TRANSMISSION_PATH,
     TRANSMISSION_REMOTE_FILE,
 )
-from fabfile.helpers import _status_get_arrkey
 from fabfile.utils import _get_hostname, _get_jinja_env, _load_service_config, _put_mv
 
 
@@ -32,7 +32,7 @@ def homer(c, services_config=None, root=None):
 
     # Get apikeys (if exists)
     arrs = [service for service in services if service.lower().endswith("arr")]
-    arrkeys = {service: _status_get_arrkey(c, service) for service in arrs}
+    arrkeys = {service: status.get_arrkey(c, service) for service in arrs}
     arrkeys = {service: key for service, key in arrkeys.items() if key}
 
     for service, key in arrkeys.items():

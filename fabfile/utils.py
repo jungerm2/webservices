@@ -109,14 +109,36 @@ def _remote_walk(c, root, exclude_dirs=None):
             yield pathname
 
 
-def _run(c, command, **kwargs):
+def _run(c, command, sudo=False, **kwargs):
     """Alternative to c.run which works on windows"""
     # If running locally (i.e: no host was specified) then c
     # is a context object and we should add replace_env=False.
     # See: https://github.com/fabric/fabric/issues/2142
     if type(c) is Context:
         kwargs.update(replace_env=False)
+    if sudo:
+        return c.sudo(command, pty=platform.system() != "Windows", **kwargs)
     return c.run(command, pty=platform.system() != "Windows", **kwargs)
+
+
+def _print_or_call(f):
+    if callable(f):
+        f()
+    elif f:
+        print(f)
+
+
+def _check_run(c, check, commands, on_success=None, on_fail=None, force=False, sudo=False, check_sudo=False):
+    """Run commands only if check passes (no-error)"""
+    if _run(c, check, hide=True, warn=True, sudo=check_sudo).failed or force:
+        if type(commands) is str:
+            _run(c, commands, sudo=sudo)
+        else:
+            for command in commands:
+                _run(c, command, sudo=sudo)
+        _print_or_call(on_success)
+    else:
+        _print_or_call(on_fail)
 
 
 def _get_service_compose(service, dcp_path=None):

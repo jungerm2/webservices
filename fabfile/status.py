@@ -1,3 +1,4 @@
+import configparser
 import glob
 import json
 from pathlib import Path
@@ -5,22 +6,20 @@ from pathlib import Path
 import humanize
 from fabric import task
 
-from fabfile.defaults import DCP, DOCKERFILE_PATH
-from fabfile.helpers import (
-    _status_dcp_running_services,
-    _status_get_arrkey,
-    _status_get_arrport,
-)
+from fabfile.defaults import DCP, DOCKERFILE_PATH, SERVICES_REMOTE_ROOT
 from fabfile.utils import (
     _get_service_compose,
+    _get_xml_value,
     _load_service_config,
     _print_dicts,
     _put_mv,
+    _read_file,
 )
 
 
 @task(aliases=["bat"])
 def battery(c, verbose=False):
+    """Show battery level and status (if available)"""
     if verbose:
         c.run("upower -i $(upower -e | grep BAT)")
     else:
@@ -30,7 +29,7 @@ def battery(c, verbose=False):
 @task(aliases=["dcp_ls_up"])
 def dcp_running_services(c, verbose=True):
     """List running services on remote host"""
-    running = _status_dcp_running_services(c)
+    running = c.run(f'docker-compose ps --services --filter "status=running"', hide=True).stdout.splitlines()
     if verbose:
         print(f"Running services are: {', '.join(running)}." if running else "No services are running.")
     return running
@@ -49,13 +48,35 @@ def dcp_services(c, verbose=True):
 @task
 def get_arrkey(c, service, encoding="utf-8"):
     """Retrieve API key for an *arr service"""
-    return _status_get_arrkey(c, service, encoding=encoding)
+    # Special case for Bazarr because it's API is not compliant
+    if service.lower() == "bazarr":
+        conf = configparser.ConfigParser()
+        conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
+        return conf.get("auth", "apikey", fallback=None) or ""
+    return _get_xml_value(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",
+        "ApiKey",
+        encoding=encoding,
+        default="",
+    )
 
 
 @task
 def get_arrport(c, service, encoding="utf-8"):
     """Retrieve port for an *arr service"""
-    return _status_get_arrport(c, service, encoding=encoding)
+    # Special case for Bazarr because it's API is not compliant
+    if service.lower() == "bazarr":
+        conf = configparser.ConfigParser()
+        conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
+        return conf.get("general", "port", fallback=None) or ""
+    return _get_xml_value(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",
+        "Port",
+        encoding=encoding,
+        default="",
+    )
 
 
 @task(incrementable=["verbose"])
@@ -81,7 +102,7 @@ def speedtest(c, container="gluetun", verbose=0):
 
 
 @task(incrementable=["verbose"])
-def verify_vpn(c, verbose=0, full=False, services_config=None, root=None, dcp_path=None):
+def vpn(c, verbose=0, full=False, services_config=None, root=None, dcp_path=None):
     """Test that the VPN is connected and it's IP isn't local"""
     running_services = set(dcp_running_services(c, verbose=False))
     if "gluetun" not in running_services:

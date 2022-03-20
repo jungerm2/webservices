@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from fabric import task
 
+from fabfile import install
 from fabfile.defaults import (
     COMPOSE_FILE,
     COMPOSE_PATH,
@@ -23,7 +24,6 @@ from fabfile.defaults import (
     SERVICES_PATH,
     SERVICES_REMOTE_ROOT,
 )
-from fabfile.helpers import _install_docker_compose
 from fabfile.utils import (
     _clone_or_pull,
     _get_hostname,
@@ -70,7 +70,7 @@ def deploy(c, services_config=None, root=None, force=False, update=False):
     """Install services with docker-compose"""
     if update:
         apt_update(c)
-    _install_docker_compose(c, force=force)
+    install.docker_compose(c, force=force)
 
     # Get dashboard icons, create /srv directory
     _clone_or_pull(

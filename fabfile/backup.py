@@ -1,4 +1,6 @@
 import datetime
+import glob
+import os
 import time
 from functools import partial
 from pathlib import Path
@@ -11,22 +13,18 @@ import requests
 from fabric import task
 from tqdm.auto import tqdm
 
+from fabfile import status
 from fabfile.defaults import BACKUP_PATH, SERVICES_REMOTE_ROOT
-from fabfile.helpers import (
-    _status_dcp_running_services,
-    _status_get_arrkey,
-    _status_get_arrport,
-)
 from fabfile.utils import _load_service_config, _read_file, _remote_walk, _total_files
 
 
-def _generic_backup(c, root, service, pbar=True, excluded=None, compressed=False, verbose=True):
+def _generic_backup(c, root, service, pbar=True, excluded=None, compressed=False, verbose=True, directory=None):
     if verbose:
         print(f"Downloading {service} backup from {root}...")
     pbar = partial(tqdm, total=_total_files(c, root)) if pbar else lambda x: x
 
     if compressed:
-        with ZipFile(f"{BACKUP_PATH}/{service}.zip", "w") as archive:
+        with ZipFile(f"{BACKUP_PATH}/{(directory or '') + '/'}{service}.zip", "w") as archive:
             for path in pbar(_remote_walk(c, root, exclude_dirs=excluded)):
                 archive.writestr(
                     ZipInfo(str(Path(path).relative_to(root))),
@@ -125,21 +123,24 @@ def arrs(
     retries=3,
     sleep=10,
     force=False,
+    directory=None,
 ):
     """Copy remote *arr backup directories to `backup/`"""
     services = _load_service_config(services_config, root)
 
     # Get api keys and ports
     arrs = set(service for service in services if service.lower().endswith("arr"))
-    running_arrs = set(service for service in _status_dcp_running_services(c) if service.lower().endswith("arr"))
+    running_arrs = set(
+        service for service in status.dcp_running_services(c, verbose=False) if service.lower().endswith("arr")
+    )
 
     if missing_arrs := arrs - running_arrs:
         print(f"WARNING: Skipping {missing_arrs} as they are not running!")
 
     running_arrs = {
         service: (
-            _status_get_arrkey(c, service),
-            _status_get_arrport(c, service),
+            status.get_arrkey(c, service),
+            status.get_arrport(c, service),
         )
         for service in running_arrs
     }
@@ -161,44 +162,44 @@ def arrs(
         for path in _remote_walk(c, f"{SERVICES_REMOTE_ROOT}/{service}"):
             if path.endswith(backup):
                 print(f"Downloading {service} backup from {path}...")
-                c.get(path, str(BACKUP_PATH / backup))
+                c.get(path, str(BACKUP_PATH / (directory or "") / backup))
                 break
         else:
             print(f"No backup found for {service}!!")
 
 
 @task
-def code_server(c):
+def code_server(c, directory=None):
     """Make a backup of code-server data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True, directory=directory)
 
 
 @task
-def gluetun(c):
+def gluetun(c, directory=None):
     """Make a backup of gluetun data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/gluetun", "gluetun", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/gluetun", "gluetun", compressed=True, directory=directory)
 
 
 @task
-def homer(c):
+def homer(c, directory=None):
     """Make a backup of homer data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/homer", "homer", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/homer", "homer", compressed=True, directory=directory)
 
 
 @task
-def ombi(c):
+def ombi(c, directory=None):
     """Make a backup of ombi data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/ombi", "ombi", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/ombi", "ombi", compressed=True, directory=directory)
 
 
 @task
-def pihole(c):
+def pihole(c, directory=None):
     """Make a backup of pihole data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/pihole", "pihole", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/pihole", "pihole", compressed=True, directory=directory)
 
 
 @task
-def plex(c):
+def plex(c, directory=None):
     """Make a backup of plex data while skipping cache data"""
     _generic_backup(
         c,
@@ -206,25 +207,26 @@ def plex(c):
         "plex",
         excluded=["/srv/plex/Library/Application Support/Plex Media Server/Cache/"],
         compressed=True,
+        directory=directory,
     )
 
 
 @task
-def tautulli(c):
+def tautulli(c, directory=None):
     """Make a backup of tautulli data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/tautulli", "tautulli", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/tautulli", "tautulli", compressed=True, directory=directory)
 
 
 @task
-def transmission(c):
+def transmission(c, directory=None):
     """Make a backup of transmission data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True, directory=directory)
 
 
 @task
-def wireguard(c):
+def wireguard(c, directory=None):
     """Make a backup of wireguard data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True)
+    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True, directory=directory)
 
 
 @task(aliases=["backup"], default=True)
@@ -232,13 +234,33 @@ def all(c, services_config=None, root=None, force=False):
     """Run all backup subtasks"""
     # Call dependencies, this should be done via pre-tasks
     # but theres a bug on windows (https://github.com/fabric/fabric/issues/2202)
-    arrs(c, services_config, root, force=force)
-    code_server(c)
-    gluetun(c)
-    homer(c)
-    ombi(c)
-    pihole(c)
-    plex(c)
-    tautulli(c)
-    transmission(c)
-    wireguard(c)
+    directory = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+    os.makedirs(BACKUP_PATH / directory, exist_ok=True)
+    print(f"Writing backup to {BACKUP_PATH / directory}.")
+
+    arrs(c, services_config, root, force=force, directory=directory)
+    code_server(c, directory=directory)
+    gluetun(c, directory=directory)
+    homer(c, directory=directory)
+    ombi(c, directory=directory)
+    pihole(c, directory=directory)
+    plex(c, directory=directory)
+    tautulli(c, directory=directory)
+    transmission(c, directory=directory)
+    wireguard(c, directory=directory)
+
+
+@task
+def restore(c, name, overwrite=True, services_config=None, root=None):
+    for service in _load_service_config(services_config, root):
+        service_safe = service.replace("_", "-")
+        if not glob.glob(str(BACKUP_PATH / name / f"{service_safe}*.zip")):
+            continue
+        if not service.lower().endswith("arr"):
+            archive = f"{service_safe}.zip"
+            print(f"Restoring {service}...")
+            c.put(str(BACKUP_PATH / name / archive))
+            if overwrite:
+                c.sudo(f"rm -rf /srv/{service_safe}", hide=True)
+            c.sudo(f"unzip -q ~/{archive} -d /srv/{service_safe}", hide=True)
+            c.run(f"rm {archive}", hide=True)

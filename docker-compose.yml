@@ -90,8 +90,6 @@ services:
     image: lscr.io/linuxserver/plex
     container_name: plex
     network_mode: host
-    #ports:
-    #  - 32400:32400
     environment:
       - PUID=$PUID
       - PGID=$PGID
@@ -110,14 +108,16 @@ services:
   ombi:
     image: lscr.io/linuxserver/ombi
     container_name: ombi
+    # Use host mode so it can easily find *arrs
+    network_mode: host
     environment:
       - PUID=$PUID
       - PGID=$PGID
       - TZ=America/Chicago
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/ombi:/config
-    ports:
-      - 3579:3579
+    # ports:
+    #   - 3579:3579
     restart: unless-stopped
   {%- endif %}
 

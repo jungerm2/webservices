@@ -123,15 +123,20 @@ By default, all services are configured to be in `/srv/<service name>`, and the 
 See [here](https://pimylifeup.com/raspberry-pi-mount-usb-drive/) for a more in-depth tutorial. The TL;DR is below:
 ```
 # Find disk, get info, make mount dir
-df -h
+lsblk
 sudo blkid /dev/sda1
 sudo apt install ntfs-3g
 sudo mkdir -p /mnt/mybook
 ```
 
-Then in `/etc/fstab` add the following line:
+Then, if in debian (raspi-os), in `/etc/fstab` add the following line:
 ```
 UUID=[UUID] /mnt/mybook [TYPE] defaults,auto,users,rw,nofail,noatime 0 0
+```
+
+In ubuntu, you'll want to add the following instead:
+```
+UUID=<uuid> /mnt/mybook ntfs uid=<userid>,gid=<groupid>,umask=0022,sync,auto,rw 0 0
 ```
 
 ## Default docker-compose settings per service
@@ -185,7 +190,9 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 
 Most recent on top:
 
-- Fix precommit hooks, split fabfile.misc into misc and status.
+- Removed fabfile.helpers in favor of importing tasks via their namespace (i.e: `from fabfile import x` and doing `x.y` instead of `from fabfile.x import y`).
+
+- Fix precommit hooks, split fabfile.misc into misc and status. Make `Ombi` use host networking to help it find all Arrs. Refactor install tasks.
 
 - Refactor all fabric code into a package, tasks are spread across multiple files for easy maintenance. Add a few tasks such as speedtest (and required dockerfile).
 
