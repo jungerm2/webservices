@@ -79,6 +79,16 @@ services:
         url: "http://{{ hostname }}:8081/admin"
         type: "PiHole"
       {%- endif %}
+      {%- if homeassistant.enable %}
+      - name: "Home Assistant"
+        subtitle: "Open source home automation"
+        logo: "https://www.home-assistant.io/images/home-assistant-logo.svg"
+        url: "http://{{ hostname }}:8123"
+      {%- endif %}
+      - name: "OctoPrint"
+        subtitle: "3D Printer Web Interface"
+        logo: "assets/dashboard-icons/png/octoprint.png"
+        url: "http://192.168.1.5:5000"
       {%- if code_server.enable %}
       - name: "Code-Server"
         subtitle: "VS Code in the browser"

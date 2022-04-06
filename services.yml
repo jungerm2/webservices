@@ -11,6 +11,9 @@ pihole:
 code-server:
   enable: true
   github: https://github.com/coder/code-server
+homeassistant:
+  enable: true
+  github: https://github.com/home-assistant/core
 
 # MEDIA SERVERS
 plex:
@@ -52,7 +55,7 @@ wireguard:
   short_description: "An extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography."
 gluetun:
   enable: true
-  regions: "Netherlands"
+  regions: "Bahamas,CA Montreal,CA Ontario,CA Toronto,CA Vancouver,Czech Republic,DE Berlin,DE Frankfurt,Denmark,Estonia,FI Helsinki,France,Hungary,Ireland,Mexico,Netherlands,New Zealand,Norway,Panama,SE Stockholm,Switzerland"
   provider: {{ keyring_get("webserver", "vpn-provider") }}
   user: {{ keyring_get("webserver", "vpn-usr") }}
   password: {{ keyring_get("webserver", "vpn-pass") }}

@@ -128,7 +128,16 @@ def _print_or_call(f):
         print(f)
 
 
-def _check_run(c, check, commands, on_success=None, on_fail=None, force=False, sudo=False, check_sudo=False):
+def _check_run(
+    c,
+    check,
+    commands,
+    on_success=None,
+    on_fail=None,
+    force=False,
+    sudo=False,
+    check_sudo=False,
+):
     """Run commands only if check passes (no-error)"""
     if _run(c, check, hide=True, warn=True, sudo=check_sudo).failed or force:
         if type(commands) is str:

@@ -6,6 +6,7 @@ from pathlib import Path
 import humanize
 from fabric import task
 
+from fabfile import install
 from fabfile.defaults import DCP, DOCKERFILE_PATH, SERVICES_REMOTE_ROOT
 from fabfile.utils import (
     _get_service_compose,
@@ -18,10 +19,16 @@ from fabfile.utils import (
 
 
 @task(aliases=["bat"])
-def battery(c, verbose=False):
+def battery(c, verbose=False, as_json=False):
     """Show battery level and status (if available)"""
-    if verbose:
-        c.run("upower -i $(upower -e | grep BAT)")
+    if verbose or as_json:
+        install.jc(c)
+        out = c.run(
+            "upower -i $(upower -e | grep BAT) | ~/.local/bin/jc --upower -p",
+            hide=not verbose,
+        )
+        if as_json:
+            return json.loads(out.stdout)
     else:
         c.run('upower -i $(upower -e | grep BAT) | grep --color=never -E "state|to\ full|to\ empty|percentage"')
 
@@ -99,6 +106,18 @@ def speedtest(c, container="gluetun", verbose=0):
     up = humanize.naturalsize(out["upload"])
     dw = humanize.naturalsize(out["download"])
     print(f"Download {dw}/s, Upload {up}/s")
+
+
+@task
+def bat_power(c):
+    """
+    Get instantaneous power draw from/to battery.
+    Note: This is *NOT* always the same as overall power draw, it
+          only is when the battery is not charging. Otherwise this
+          is the power used to charge the battery! When fully
+          charged it should be (near) zero watts.
+    """
+    c.run("""awk '{print $1*10^-6 " W"}' /sys/class/power_supply/BAT*/power_now""")
 
 
 @task(incrementable=["verbose"])

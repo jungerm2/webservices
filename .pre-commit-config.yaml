@@ -13,3 +13,9 @@ repos:
     entry: fab misc.render-readme
     pass_filenames: False
     language: system
+
+  - id: fab-render-readme
+    name: Clear Metadata
+    entry: fab misc.clear-metadata
+    pass_filenames: False
+    language: system

@@ -3,3 +3,5 @@ wg0.conf
 __pycache__/
 .idea/
 backup/
+exiftool.exe
+TODO.md

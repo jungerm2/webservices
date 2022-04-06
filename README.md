@@ -6,6 +6,7 @@ The services currently supported are:
 - [Homer](https://github.com/bastienwirtz/homer): A very simple static homepage for your server.
 - [Pihole](https://github.com/pi-hole/pi-hole): A black hole for Internet advertisements
 - [Code_server](https://github.com/coder/code-server): VS Code in the browser
+- [Homeassistant](https://github.com/home-assistant/core): Open source home automation that puts local control and privacy first.
 - [Plex](https://www.plex.tv/): Plex organizes all of your personal media so you can enjoy it no matter where you are.
 - [Ombi](https://github.com/Ombi-app/Ombi): Want a Movie or TV Show on Plex/Emby/Jellyfin? Use Ombi!
 - [Prowlarr](https://github.com/Prowlarr/Prowlarr): Indexer manager/proxy built on the popular *arr stack
@@ -80,11 +81,12 @@ Available tasks:
   backup.ombi                                      Make a backup of ombi data
   backup.pihole                                    Make a backup of pihole data
   backup.plex                                      Make a backup of plex data while skipping cache data
-  backup.restore
+  backup.restore-simple                            Upload and unzip all not arr backups
   backup.tautulli                                  Make a backup of tautulli data
   backup.transmission                              Make a backup of transmission data
   backup.wireguard                                 Make a backup of wireguard data
   configure.homer                                  Fetch and add apikey to homer dashboard for *arr apps
+  configure.mosquitto
   configure.plex                                   Claim plex server, see: `https://www.plex.tv/claim/`
   configure.transmission (configure.transm)        Upload transmission's `settings.json` to host
   configure.wireguard (configure.wg)               Upload wireguard config (i.e: wg0.conf) to host
@@ -93,15 +95,19 @@ Available tasks:
   install.ctop                                     Install top-like interface for container metrics
   install.docker                                   Install docker if not present
   install.docker-compose (install.dcp)             Install docker-compose if not present
+  install.elodie                                   An EXIF-based photo assistant, organizer, manager and workflow automation tool
+  install.jc                                       Install jc, a cli parser for common tools
   install.lazydocker (install.lzd)                 Install the lazy docker manager
   install.python3 (install.py3)                    Install python3 (and pip!) if not present
   install.speedtest                                Install Ookla's speedtest client on host
   misc.apt-update                                  (apt) Update and upgrade system
+  misc.clear-metadata
   misc.deploy                                      Install services with docker-compose
   misc.format                                      Format (python) code on local/host machine at root
   misc.reboot                                      Reboot host machine
   misc.render-readme                               Update code segments in the README file (runs on local)
   misc.set-swap-size (misc.resize-swap)            Set swap partition size on remote (in MB)
+  status.bat-power                                 Get instantaneous power draw from/to battery.
   status.battery (status.bat)                      Show battery level and status (if available)
   status.dcp-running-services (status.dcp-ls-up)   List running services on remote host
   status.dcp-services (status.dcp-ls)              List services in remote's compose file
@@ -146,6 +152,9 @@ pihole:
 code-server:
   enable: true
   github: https://github.com/coder/code-server
+homeassistant:
+  enable: true
+  github: https://github.com/home-assistant/core
 
 # MEDIA SERVERS
 plex:
@@ -187,7 +196,7 @@ wireguard:
   short_description: "An extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography."
 gluetun:
   enable: true
-  regions: "Netherlands"
+  regions: "Bahamas,CA Montreal,CA Ontario,CA Toronto,CA Vancouver,Czech Republic,DE Berlin,DE Frankfurt,Denmark,Estonia,FI Helsinki,France,Hungary,Ireland,Mexico,Netherlands,New Zealand,Norway,Panama,SE Stockholm,Switzerland"
   provider: {{ keyring_get("webserver", "vpn-provider") }}
   user: {{ keyring_get("webserver", "vpn-usr") }}
   password: {{ keyring_get("webserver", "vpn-pass") }}
@@ -300,11 +309,14 @@ pihole:
     - PGID=$PGID
     - TZ=America/Chicago
     - WEBPASSWORD={{ pihole.webpassword }}
+    - DNSMASQ_LISTENING=all  # Very important! Otherwise no requests get processed!
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/pihole:/etc/pihole
     - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
   cap_add:
     - NET_ADMIN
+  dns:
+    - 127.0.0.1
   restart: unless-stopped
 ```
 
@@ -328,6 +340,29 @@ code-server:
   ports:
     - 8443:8443
   restart: unless-stopped
+```
+
+</details>
+<details>
+    <summary>Compose for Homeassistant</summary>
+
+```yaml
+homeassistant:
+  container_name: homeassistant
+  image: "ghcr.io/home-assistant/home-assistant:stable"
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/homeassistant:/config
+    - /etc/localtime:/etc/localtime:ro
+  restart: unless-stopped
+  privileged: true
+  network_mode: host
+  depends_on: [ "mosquitto", ]
+mosquitto:
+  container_name: mosquitto
+  image: eclipse-mosquitto
+  network_mode: host
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/homeassistant/addons/mosquitto:/mosquitto
 ```
 
 </details>
@@ -534,6 +569,7 @@ watchtower:
     # This cron expression needs to be 6 fields long, not the default 5
     # "At 04:00 AM, only on Monday", see: https://crontab.cronhub.io/
     - WATCHTOWER_SCHEDULE=0 0 4 * * 1
+    - WATCHTOWER_CLEANUP="true"
     - TZ=America/Chicago
 ```
 
@@ -638,6 +674,10 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 ## Changelog
 
 Most recent on top:
+
+- Add Home assistant service (and mosquitto broker) as well as link to octoprint in homer.
+
+- Tweak compose file to allow `pihole` to receive traffic. Add battery/power monitoring tasks. 
 
 - Removed fabfile.helpers in favor of importing tasks via their namespace (i.e: `from fabfile import x` and doing `x.y` instead of `from fabfile.x import y`).
 

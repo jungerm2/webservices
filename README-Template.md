@@ -190,6 +190,10 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 
 Most recent on top:
 
+- Add Home assistant service (and mosquitto broker) as well as link to octoprint in homer.
+
+- Tweak compose file to allow `pihole` to receive traffic. Add battery/power monitoring tasks. 
+
 - Removed fabfile.helpers in favor of importing tasks via their namespace (i.e: `from fabfile import x` and doing `x.y` instead of `from fabfile.x import y`).
 
 - Fix precommit hooks, split fabfile.misc into misc and status. Make `Ombi` use host networking to help it find all Arrs. Refactor install tasks.

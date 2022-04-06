@@ -13,6 +13,7 @@ from fabfile.defaults import (
     HOMER_PATH,
     HOMER_REMOTE_FILE,
     MEDIA_REMOTE_ROOT,
+    MOSQUITTO_PATH,
     SERVICES_REMOTE_ROOT,
     TRANSMISSION_PATH,
     TRANSMISSION_REMOTE_FILE,
@@ -58,6 +59,11 @@ def homer(c, services_config=None, root=None):
         filename=HOMER_REMOTE_FILE,
     )
     print("done!")
+
+
+@task
+def mosquitto(c):
+    _put_mv(c, MOSQUITTO_PATH, f"/{SERVICES_REMOTE_ROOT}/homeassistant/addons/mosquitto/config")
 
 
 @task

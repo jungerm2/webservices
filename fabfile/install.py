@@ -1,6 +1,6 @@
 from fabric import task
 
-from fabfile.utils import _check_run, _get_py_version
+from fabfile.utils import _check_run, _get_py_version, _put_mv
 
 
 @task(default=True, aliases=["install"])
@@ -44,8 +44,8 @@ def docker(c, force=False):
             "curl -fsSL https://get.docker.com -o get-docker.sh",
             "sh get-docker.sh",
             "usermod -aG docker ${USER}",
-            "systemctl enable docker",
-            "rm get-docker.sh",
+            "chmod 666 /var/run/docker.sock" "systemctl enable docker",
+            "rm -f get-docker.sh",
         ],
         on_fail="Docker is already installed, skipping...",
         sudo=True,
@@ -68,6 +68,37 @@ def docker_compose(c, force=False):
         sudo=True,
         force=force,
     )
+
+
+@task
+def elodie(c, force=False):
+    """An EXIF-based photo assistant, organizer, manager and workflow automation tool"""
+    if c.run("elodie --help", hide=True, warn=True).failed:
+        # Install elodie in it's own venv
+        python3(c, force=force)
+        c.sudo("apt-get install -y python3-venv")
+        c.run("python3 -m venv ~/.elodie/venv")
+
+        c.sudo("apt-get install -y libimage-exiftool-perl")
+        c.run("git clone https://github.com/jmathai/elodie.git ~/.elodie/src")
+        with c.cd(".elodie/src"):
+            c.run("~/.elodie/venv/bin/python3 -m pip install -r requirements.txt")
+
+        # Copy over default config used by elodie
+        c.run("cp .elodie/src/config.ini-sample .elodie/config.ini")
+
+        # Add elodie executable to path
+        _put_mv(
+            c,
+            '~/.elodie/venv/bin/python3 ~/.elodie/src/elodie.py "$@"\n',
+            ".local/bin",
+            filename="elodie",
+            raw=True,
+        )
+        c.sudo("chmod +x .local/bin/elodie")
+        print("Make sure to edit `~/.elodie/config.ini` for elodie to find location info!")
+    else:
+        print("Elodie is already installed, skipping...")
 
 
 @task(aliases=["lzd"])
@@ -125,5 +156,18 @@ def croc(c, force=False):
         "curl https://getcroc.schollz.com | bash",
         on_fail="Croc is already installed, skipping...",
         sudo=True,
+        force=force,
+    )
+
+
+@task
+def jc(c, force=False):
+    """Install jc, a cli parser for common tools"""
+    python3(c, force=force)
+    _check_run(
+        c,
+        "~/.local/bin/jc -v",
+        "python3 -m pip install jc",
+        on_fail="JC is already installed, skipping...",
         force=force,
     )

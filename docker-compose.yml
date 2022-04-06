@@ -58,11 +58,14 @@ services:
       - PGID=$PGID
       - TZ=America/Chicago
       - WEBPASSWORD={{ pihole.webpassword }}
+      - DNSMASQ_LISTENING=all  # Very important! Otherwise no requests get processed!
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/pihole:/etc/pihole
       - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
     cap_add:
       - NET_ADMIN
+    dns:
+      - 127.0.0.1
     restart: unless-stopped
   {%- endif %}
 
@@ -82,6 +85,25 @@ services:
     ports:
       - 8443:8443
     restart: unless-stopped
+  {%- endif %}
+
+  {%- if homeassistant.enable %}
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    depends_on: [ "mosquitto", ]
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    network_mode: host
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/homeassistant/addons/mosquitto:/mosquitto
   {%- endif %}
 
   # MEDIA SERVERS
@@ -266,6 +288,7 @@ services:
       # This cron expression needs to be 6 fields long, not the default 5
       # "At 04:00 AM, only on Monday", see: https://crontab.cronhub.io/
       - WATCHTOWER_SCHEDULE=0 0 4 * * 1
+      - WATCHTOWER_CLEANUP="true"
       - TZ=America/Chicago
   {%- endif %}
 

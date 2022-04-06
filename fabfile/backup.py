@@ -18,7 +18,16 @@ from fabfile.defaults import BACKUP_PATH, SERVICES_REMOTE_ROOT
 from fabfile.utils import _load_service_config, _read_file, _remote_walk, _total_files
 
 
-def _generic_backup(c, root, service, pbar=True, excluded=None, compressed=False, verbose=True, directory=None):
+def _generic_backup(
+    c,
+    root,
+    service,
+    pbar=True,
+    excluded=None,
+    compressed=False,
+    verbose=True,
+    directory=None,
+):
     if verbose:
         print(f"Downloading {service} backup from {root}...")
     pbar = partial(tqdm, total=_total_files(c, root)) if pbar else lambda x: x
@@ -171,19 +180,37 @@ def arrs(
 @task
 def code_server(c, directory=None):
     """Make a backup of code-server data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/code-server",
+        "code-server",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task
 def gluetun(c, directory=None):
     """Make a backup of gluetun data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/gluetun", "gluetun", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/gluetun",
+        "gluetun",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task
 def homer(c, directory=None):
     """Make a backup of homer data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/homer", "homer", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/homer",
+        "homer",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task
@@ -195,7 +222,13 @@ def ombi(c, directory=None):
 @task
 def pihole(c, directory=None):
     """Make a backup of pihole data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/pihole", "pihole", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/pihole",
+        "pihole",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task
@@ -214,19 +247,37 @@ def plex(c, directory=None):
 @task
 def tautulli(c, directory=None):
     """Make a backup of tautulli data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/tautulli", "tautulli", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/tautulli",
+        "tautulli",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task
 def transmission(c, directory=None):
     """Make a backup of transmission data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/transmission",
+        "transmission",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task
 def wireguard(c, directory=None):
     """Make a backup of wireguard data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True, directory=directory)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/wireguard",
+        "wireguard",
+        compressed=True,
+        directory=directory,
+    )
 
 
 @task(aliases=["backup"], default=True)
@@ -251,7 +302,8 @@ def all(c, services_config=None, root=None, force=False):
 
 
 @task
-def restore(c, name, overwrite=True, services_config=None, root=None):
+def restore_simple(c, name, overwrite=True, services_config=None, root=None):
+    """Upload and unzip all not arr backups"""
     for service in _load_service_config(services_config, root):
         service_safe = service.replace("_", "-")
         if not glob.glob(str(BACKUP_PATH / name / f"{service_safe}*.zip")):
