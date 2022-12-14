@@ -61,35 +61,31 @@ Then, in HA's webUI, go to `/config/integrations` then `add integration`. Search
 In HA's `configuration.yaml` file (likely located in `/srv/homeassistant`, otherwise see [here](https://www.home-assistant.io/docs/configuration/)) you'll need to add the following:
 
 ```
-switch:
-  - platform: mqtt
-    name: "Bedroom Smartplug"
+mqtt:
+  switch:
+  - name: "Bedroom Smartplug"
     unique_id: "bedroom.smartplug1"
     icon: "mdi:lightbulb"
     state_topic: "home/bedroom/smartplug1/get"
     command_topic: "home/bedroom/smartplug1/set"
     qos: 1
-    payload_on: "on"
-    payload_off: "off"
+    payload_on: "on" 
+    payload_off: "off" 
     retain: false
-
-sensor:
-  - platform: mqtt
-    name: "Bedroom Temperature"
+  sensor:
+  - name: "Bedroom Temperature"
     unique_id: "bedroom.temperature1"
     icon: "mdi:thermometer"
     state_topic: "home/bedroom/smartsensor1"
     unit_of_measurement: "°C"
     value_template: "{{ value_json.temperature }}"
-  - platform: mqtt
-    name: "Bedroon Humidity"
+  - name: "Bedroon Humidity"
     unique_id: "bedroom.humidity1"
     icon: "mdi:water"
     state_topic: "home/bedroom/smartsensor1"
     unit_of_measurement: "%"
     value_template: "{{ value_json.humidity }}"
-  - platform: mqtt
-    name: "Bedroon Pressure"
+  - name: "Bedroon Pressure"
     unique_id: "bedroom.pressure1"
     icon: "mdi:airballoon"
     state_topic: "home/bedroom/smartsensor1"
