@@ -17,6 +17,7 @@ The services currently supported are:
 - [Wireguard](https://github.com/linuxserver/docker-wireguard): An extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography.
 - [Gluetun](https://github.com/qdm12/gluetun): VPN client in a thin Docker container for multiple VPN providers, written in Go, and using OpenVPN or Wireguard, DNS over TLS, with a few proxy servers built-in.
 - [Transmission](https://github.com/transmission/transmission): A fast, easy, and free BitTorrent client.
+- [Wgeasy](https://github.com/WeeJeWel/wg-easy): The easiest way to run WireGuard VPN + Web-based Admin UI.
 - [Watchtower](https://github.com/containrrr/watchtower): A process for automating Docker container base image updates.
 - [Glances](https://github.com/nicolargo/glances): Glances an Eye on your system. A top/htop alternative for GNU/Linux, BSD, Mac OS and Windows operating systems.
 - [Tautulli](https://github.com/Tautulli/Tautulli): A Python based monitoring and tracking tool for Plex Media Server.
@@ -42,7 +43,7 @@ The remote is assumed to be a linux machine which can be accessed via SSH.
 
 To deploy the default services to your host just run (locally):
 ```
-fab deploy -H <user>@<addr> --prompt-for-login-password
+fab misc.deploy -H <user>@<addr> --prompt-for-login-password
 ```
 
 Then you should be able to simply launch the services by running (on the remote host):
@@ -84,6 +85,7 @@ Available tasks:
   backup.restore-simple                            Upload and unzip all not arr backups
   backup.tautulli                                  Make a backup of tautulli data
   backup.transmission                              Make a backup of transmission data
+  backup.wgeasy                                    Make a backup of wgeasy data
   backup.wireguard                                 Make a backup of wireguard data
   configure.homer                                  Fetch and add apikey to homer dashboard for *arr apps
   configure.mosquitto
@@ -150,20 +152,20 @@ pihole:
   webpassword: {{ keyring_get("webserver", "pihole") }}
   github: https://github.com/pi-hole/pi-hole
 code-server:
-  enable: true
+  enable: false
   github: https://github.com/coder/code-server
 homeassistant:
-  enable: true
+  enable: false
   github: https://github.com/home-assistant/core
 
 # MEDIA SERVERS
 plex:
-  enable: true
+  enable: false
   short_description: "Plex organizes all of your personal media so you can enjoy it no matter where you are."
   link: https://www.plex.tv/
   claim: ""
 ombi:
-  enable: true
+  enable: false
   github: https://github.com/Ombi-app/Ombi
 
 # TRACKERS
@@ -181,11 +183,11 @@ sonarr:
   github: https://github.com/Sonarr/Sonarr
   apikey: ""
 lidarr:
-  enable: true
+  enable: false
   github: https://github.com/Lidarr/Lidarr
   apikey: ""
 bazarr:
-  enable: true
+  enable: false
   github: https://github.com/morpheus65535/bazarr
   apikey: ""
 
@@ -196,7 +198,6 @@ wireguard:
   short_description: "An extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography."
 gluetun:
   enable: true
-  regions: "Bahamas,CA Montreal,CA Ontario,CA Toronto,CA Vancouver,Czech Republic,DE Berlin,DE Frankfurt,Denmark,Estonia,FI Helsinki,France,Hungary,Ireland,Mexico,Netherlands,New Zealand,Norway,Panama,SE Stockholm,Switzerland"
   provider: {{ keyring_get("webserver", "vpn-provider") }}
   user: {{ keyring_get("webserver", "vpn-usr") }}
   password: {{ keyring_get("webserver", "vpn-pass") }}
@@ -207,16 +208,21 @@ transmission:
   password: {{ keyring_get("webserver", "transmission-pass") }}
   github: https://github.com/transmission/transmission
   short_description: "A fast, easy, and free BitTorrent client."
+wgeasy:
+  enable: true
+  password: {{ keyring_get("webserver", "wg-easy-pass") }}
+  wanip: {{ public_ip }}
+  github: https://github.com/WeeJeWel/wg-easy
 
 # MAINTENANCE & MONITORING
 watchtower:
-  enable: true
+  enable: false
   github: https://github.com/containrrr/watchtower
 glances:
   enable: true
   github: https://github.com/nicolargo/glances
 tautulli:
-  enable: true
+  enable: false
   github: https://github.com/Tautulli/Tautulli
 
 ```
@@ -313,6 +319,7 @@ pihole:
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/pihole:/etc/pihole
     - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
+    - {{ SERVICES_REMOTE_ROOT }}/pihole/backups:/backups
   cap_add:
     - NET_ADMIN
   dns:
@@ -363,6 +370,7 @@ mosquitto:
   network_mode: host
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/homeassistant/addons/mosquitto:/mosquitto
+  restart: unless-stopped
 ```
 
 </details>
@@ -528,7 +536,6 @@ gluetun:
     - VPN_SERVICE_PROVIDER={{ gluetun.provider }}
     - OPENVPN_USER={{ gluetun.user }}
     - OPENVPN_PASSWORD={{ gluetun.password }}
-    - SERVER_REGIONS={{ gluetun.regions }}
   <<: *vpnports
   restart: unless-stopped
 ```
@@ -553,6 +560,32 @@ transmission:
     - {{ MEDIA_REMOTE_ROOT }}/downloads:/media/downloads
   <<: *usevpn
   restart: unless-stopped
+```
+
+</details>
+<details>
+    <summary>Compose for Wgeasy</summary>
+
+```yaml
+wg-easy:
+  environment:
+    - WG_HOST={{ wgeasy.wanip }}
+    - PASSWORD={{ wgeasy.password }}
+    - WG_DEFAULT_DNS=1.1.1.1
+  image: weejewel/wg-easy
+  container_name: wg-easy
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/wgeasy:/etc/wireguard
+  ports:
+    - "51820:51820/udp"
+    - "51821:51821/tcp"
+  restart: always
+  cap_add:
+    - NET_ADMIN
+    - SYS_MODULE
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
 ```
 
 </details>
@@ -619,6 +652,20 @@ tautulli:
 ## Troubleshooting & FAQ
 
 <details>
+    <summary><i>PiHole not working on Ubuntu/Fedora.</i></summary>
+
+See [here](https://github.com/pi-hole/docker-pi-hole#installing-on-ubuntu-or-fedora).
+
+</details>
+
+<details>
+    <summary><i>Conected to wgeasy but no internet.</i></summary>
+
+Make sure to open the correct port on your network. By default you need to port-forward port 51820. 
+
+</details>
+
+<details>
     <summary><i>Raspberry pi can be pinged but does not respond to ssh/http requests.</i></summary>
 
 This is likely due to the PI running out of RAM (i.e: it can't allocate pages for new processes). This can be "fixed" by resizing the swap partition. Try rebooting and running the `resize-swap` task with a larger size (maybe 2048 MB).
@@ -674,6 +721,8 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 ## Changelog
 
 Most recent on top:
+
+- Add wgeasy vpn service.
 
 - Add Home assistant service (and mosquitto broker) as well as link to octoprint in homer.
 

@@ -62,6 +62,7 @@ services:
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/pihole:/etc/pihole
       - {{ SERVICES_REMOTE_ROOT }}/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
+      - {{ SERVICES_REMOTE_ROOT }}/pihole/backups:/backups
     cap_add:
       - NET_ADMIN
     dns:
@@ -104,6 +105,7 @@ services:
     network_mode: host
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/homeassistant/addons/mosquitto:/mosquitto
+    restart: unless-stopped
   {%- endif %}
 
   # MEDIA SERVERS
@@ -254,7 +256,6 @@ services:
       - VPN_SERVICE_PROVIDER={{ gluetun.provider }}
       - OPENVPN_USER={{ gluetun.user }}
       - OPENVPN_PASSWORD={{ gluetun.password }}
-      - SERVER_REGIONS={{ gluetun.regions }}
     <<: *vpnports
     restart: unless-stopped
   {%- endif %}
@@ -275,6 +276,28 @@ services:
       - {{ MEDIA_REMOTE_ROOT }}/downloads:/media/downloads
     <<: *usevpn
     restart: unless-stopped
+  {%- endif %}
+
+  {%- if wgeasy.enable %}
+  wg-easy:
+    environment:
+      - WG_HOST={{ wgeasy.wanip }}
+      - PASSWORD={{ wgeasy.password }}
+      - WG_DEFAULT_DNS=1.1.1.1
+    image: weejewel/wg-easy
+    container_name: wg-easy
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/wgeasy:/etc/wireguard
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    restart: always
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
   {%- endif %}
 
   # MAINTENANCE & MONITORING
@@ -323,3 +346,4 @@ services:
       - 61209:61209
     restart: unless-stopped
   {%- endif %}
+

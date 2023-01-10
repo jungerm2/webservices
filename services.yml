@@ -9,20 +9,20 @@ pihole:
   webpassword: {{ keyring_get("webserver", "pihole") }}
   github: https://github.com/pi-hole/pi-hole
 code-server:
-  enable: true
+  enable: false
   github: https://github.com/coder/code-server
 homeassistant:
-  enable: true
+  enable: false
   github: https://github.com/home-assistant/core
 
 # MEDIA SERVERS
 plex:
-  enable: true
+  enable: false
   short_description: "Plex organizes all of your personal media so you can enjoy it no matter where you are."
   link: https://www.plex.tv/
   claim: ""
 ombi:
-  enable: true
+  enable: false
   github: https://github.com/Ombi-app/Ombi
 
 # TRACKERS
@@ -40,11 +40,11 @@ sonarr:
   github: https://github.com/Sonarr/Sonarr
   apikey: ""
 lidarr:
-  enable: true
+  enable: false
   github: https://github.com/Lidarr/Lidarr
   apikey: ""
 bazarr:
-  enable: true
+  enable: false
   github: https://github.com/morpheus65535/bazarr
   apikey: ""
 
@@ -55,7 +55,6 @@ wireguard:
   short_description: "An extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography."
 gluetun:
   enable: true
-  regions: "Bahamas,CA Montreal,CA Ontario,CA Toronto,CA Vancouver,Czech Republic,DE Berlin,DE Frankfurt,Denmark,Estonia,FI Helsinki,France,Hungary,Ireland,Mexico,Netherlands,New Zealand,Norway,Panama,SE Stockholm,Switzerland"
   provider: {{ keyring_get("webserver", "vpn-provider") }}
   user: {{ keyring_get("webserver", "vpn-usr") }}
   password: {{ keyring_get("webserver", "vpn-pass") }}
@@ -66,14 +65,19 @@ transmission:
   password: {{ keyring_get("webserver", "transmission-pass") }}
   github: https://github.com/transmission/transmission
   short_description: "A fast, easy, and free BitTorrent client."
+wgeasy:
+  enable: true
+  password: {{ keyring_get("webserver", "wg-easy-pass") }}
+  wanip: {{ public_ip }}
+  github: https://github.com/WeeJeWel/wg-easy
 
 # MAINTENANCE & MONITORING
 watchtower:
-  enable: true
+  enable: false
   github: https://github.com/containrrr/watchtower
 glances:
   enable: true
   github: https://github.com/nicolargo/glances
 tautulli:
-  enable: true
+  enable: false
   github: https://github.com/Tautulli/Tautulli

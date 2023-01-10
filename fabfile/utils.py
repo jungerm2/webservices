@@ -10,6 +10,7 @@ from stat import S_ISDIR, S_ISREG
 from xml.etree import ElementTree as ET
 
 import keyring
+import requests
 from invoke import Context
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ruamel.yaml import YAML
@@ -35,7 +36,7 @@ def _clone_or_pull(c, addr, path):
     # Only clone repo if not present, only allow fast-forward (i.e: no merge)
     c.sudo(f"mkdir -p {path}")
     if c.sudo(f"git -C {path} pull --ff-only", warn=True).failed:
-        c.sudo(f"git clone {addr} {path}")
+        c.sudo(f"git clone {addr} {path}", echo=True)
 
 
 def _put_mv(c, path_or_data, target_dir, raw=False, filename=None):
@@ -65,7 +66,9 @@ def _load_service_config(services_config=None, root=None):
     # Preprocess services.yml, fill out any secrets with `keyring`
     env = _get_jinja_env(root)
     services = env.get_template(services_config or str(SERVICES_PATH), "r")
-    services = services.render(keyring_get=keyring.get_password)
+    services = services.render(
+        keyring_get=keyring.get_password, public_ip=requests.get("https://api.ipify.org").content.decode("utf8")
+    )
 
     # Load services config, expand enable option
     services = YAML(typ="safe").load(services)

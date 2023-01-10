@@ -24,11 +24,11 @@ def ctop(c, force=False):
         [
             "echo 'deb http://packages.azlux.fr/debian/ buster main' | sudo tee /etc/apt/sources.list.d/azlux.list",
             "wget -qO - https://azlux.fr/repo.gpg.key | sudo apt-key add -",
-            "apt update",
-            "apt install docker-ctop",
+            "sudo apt update",
+            "sudo apt install docker-ctop",
         ],
         on_fail="CTOP is already installed, skipping...",
-        sudo=True,
+        sudo=False,
         force=force,
     )
 
@@ -155,7 +155,7 @@ def croc(c, force=False):
         "croc -v",
         "curl https://getcroc.schollz.com | bash",
         on_fail="Croc is already installed, skipping...",
-        sudo=True,
+        sudo=False,
         force=force,
     )
 

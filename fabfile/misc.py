@@ -75,7 +75,7 @@ def deploy(c, services_config=None, root=None, force=False, update=False):
     # Get dashboard icons, create /srv directory
     _clone_or_pull(
         c,
-        "https://github.com/walkxhub/dashboard-icons.git",
+        "https://github.com/walkxcode/dashboard-icons",
         f"{SERVICES_REMOTE_ROOT}/dashboard-icons/",
     )
 
@@ -115,6 +115,8 @@ def deploy(c, services_config=None, root=None, force=False, update=False):
         c.sudo("apt-get install tmux -y")
     if c.run("ncdu -V", hide=True, warn=True).failed:
         c.sudo("apt-get install ncdu -y")
+    if c.run("batcat -V", hide=True, warn=True).failed:
+        c.sudo("apt-get install bat -y")
 
 
 @task

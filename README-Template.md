@@ -37,7 +37,7 @@ The remote is assumed to be a linux machine which can be accessed via SSH.
 
 To deploy the default services to your host just run (locally):
 ```
-fab deploy -H <user>@<addr> --prompt-for-login-password
+fab misc.deploy -H <user>@<addr> --prompt-for-login-password
 ```
 
 Then you should be able to simply launch the services by running (on the remote host):
@@ -154,6 +154,14 @@ Here we show the snippet of the docker compose file that is responsible for each
 
 ## Troubleshooting & FAQ
 
+{% call details("<i>PiHole not working on Ubuntu/Fedora.</i>") %}
+See [here](https://github.com/pi-hole/docker-pi-hole#installing-on-ubuntu-or-fedora).
+{% endcall %}
+
+{% call details("<i>Conected to wgeasy but no internet.</i>") %}
+Make sure to open the correct port on your network. By default you need to port-forward port 51820. 
+{% endcall %}
+
 {% call details("<i>Raspberry pi can be pinged but does not respond to ssh/http requests.</i>") %}
 This is likely due to the PI running out of RAM (i.e: it can't allocate pages for new processes). This can be "fixed" by resizing the swap partition. Try rebooting and running the `resize-swap` task with a larger size (maybe 2048 MB).
 {% endcall %}
@@ -189,6 +197,8 @@ Installing GPU drivers on ubuntu can cause this. See [here](https://askubuntu.co
 ## Changelog
 
 Most recent on top:
+
+- Add wgeasy vpn service.
 
 - Add Home assistant service (and mosquitto broker) as well as link to octoprint in homer.
 
