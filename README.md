@@ -4,6 +4,7 @@ This repo contains tools to setup a home media server remotely via [docker-compo
 
 The services currently supported are:
 - [Homer](https://github.com/bastienwirtz/homer): A very simple static homepage for your server.
+- [Mcserver](None): Missing Description!
 - [Pihole](https://github.com/pi-hole/pi-hole): A black hole for Internet advertisements
 - [Code_server](https://github.com/coder/code-server): VS Code in the browser
 - [Homeassistant](https://github.com/home-assistant/core): Open source home automation that puts local control and privacy first.
@@ -145,6 +146,10 @@ The main configuration file is `services.yml`. Inside you'll find a list of serv
 homer:
   enable: true
   github: https://github.com/bastienwirtz/homer
+
+# MINECRAFT
+mcserver:
+  enable: true
 
 # QoL SERVICES
 pihole:
@@ -294,6 +299,26 @@ homer:
     - PUID=$PUID
     - PGID=$PGID
     - TZ=America/Chicago
+  restart: unless-stopped
+```
+
+</details>
+<details>
+    <summary>Compose for Mcserver</summary>
+
+```yaml
+mcserver:
+  image: marctv/minecraft-papermc-server:latest
+  container_name: mcserver
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/mcserver:/data:rw
+  ports:
+    - 25565:25565
+  environment:
+    - PUID=$PUID
+    - PGID=$PGID
+    - TZ=America/Chicago
+    - MEMORYSIZE='6G'
   restart: unless-stopped
 ```
 

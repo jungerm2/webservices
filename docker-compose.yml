@@ -43,6 +43,23 @@ services:
     restart: unless-stopped
   {%- endif %}
 
+  # MINECRAFT
+  {%- if mcserver.enable %}
+  mcserver:
+    image: marctv/minecraft-papermc-server:latest
+    container_name: mcserver
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/mcserver:/data:rw
+    ports:
+      - 25565:25565
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=America/Chicago
+      - MEMORYSIZE='6G'
+    restart: unless-stopped
+  {%- endif %}
+
   # QoL SERVICES
   {%- if pihole.enable %}
   pihole:

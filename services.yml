@@ -3,6 +3,10 @@ homer:
   enable: true
   github: https://github.com/bastienwirtz/homer
 
+# MINECRAFT
+mcserver:
+  enable: true
+
 # QoL SERVICES
 pihole:
   enable: true
