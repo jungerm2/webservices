@@ -318,7 +318,7 @@ mcserver:
     - PUID=$PUID
     - PGID=$PGID
     - TZ=America/Chicago
-    - MEMORYSIZE='6G'
+    - MEMORYSIZE=6G
   restart: unless-stopped
 ```
 
