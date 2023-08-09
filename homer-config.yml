@@ -75,7 +75,7 @@ services:
       {%- if pihole.enable %}
       - name: "Pi-Hole"
         # subtitle: "Adblocker/DNS sinkhole"
-        logo: "assets/dashboard-icons/png/pihole.png"
+        logo: "assets/dashboard-icons/svg/pi-hole.svg"
         url: "http://{{ hostname }}:8081/admin"
         type: "PiHole"
       {%- endif %}
@@ -107,7 +107,7 @@ services:
       {%- endif %}
   {% endif %}
 
-  {%- if plex.enable or ombi.enable %}
+  {%- if plex.enable or jellyfin.enable or ombi.enable %}
   - name: "Media"
     icon: "fas fa-film"
     items:
@@ -116,6 +116,12 @@ services:
         subtitle: "Streaming Platform"
         logo: "assets/dashboard-icons/png/plex.png"
         url: "http://{{ hostname }}:32400"
+      {%- endif %}
+      {%- if jellyfin.enable %}
+      - name: "Jellyfin"
+        subtitle: "The Free Software Media System"
+        logo: "assets/dashboard-icons/png/jellyfin.png"
+        url: "http://{{ hostname }}:8096"
       {%- endif %}
       {%- if ombi.enable %}
       - name: "Ombi"
@@ -187,7 +193,7 @@ services:
       {%- endif %}
   {% endif %}
 
-  {%- if transmission.enable %}
+  {%- if transmission.enable or filebrowser.enable %}
   - name: "Downloaders"
     icon: "fas fa-download"
     items:
@@ -196,6 +202,12 @@ services:
         subtitle: "Thin bitTorrent client"
         logo: "assets/dashboard-icons/png/transmission.png"
         url: "http://{{ hostname }}:9091"
+      {%- endif %}
+      {%- if filebrowser.enable %}
+      - name: "FileBrowser"
+        subtitle: "Web-based file manager"
+        logo: "assets/dashboard-icons/svg/filebrowser.svg"
+        url: "http://{{ hostname }}:8080"
       {%- endif %}
   {% endif %}
 

@@ -189,4 +189,8 @@ def format(c, check=False, root=None):
 
 @task
 def clear_metadata(c):
-    _run(c, 'exiftool -overwrite_original -recurse -all= * -if "MIMEType=~/image/" -if "$MIMEType=~/video/"', warn=True)
+    _run(
+        c,
+        'exiftool -overwrite_original -recurse -all= * -if "MIMEType=~/image/" -if "$MIMEType=~/video/"',
+        warn=True,
+    )

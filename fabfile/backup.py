@@ -183,33 +183,62 @@ def arrs(
 def code_server(c, directory=None, **kwargs):
     """Make a backup of code-server data"""
     _generic_backup(
-        c, f"{SERVICES_REMOTE_ROOT}/code-server", "code-server", compressed=True, directory=directory, **kwargs
+        c,
+        f"{SERVICES_REMOTE_ROOT}/code-server",
+        "code-server",
+        compressed=True,
+        directory=directory,
+        **kwargs,
     )
 
 
 @task
 def gluetun(c, directory=None, **kwargs):
     """Make a backup of gluetun data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/gluetun", "gluetun", compressed=True, directory=directory, **kwargs)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/gluetun",
+        "gluetun",
+        compressed=True,
+        directory=directory,
+        **kwargs,
+    )
 
 
 @task
 def homer(c, directory=None, **kwargs):
     """Make a backup of homer data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/homer", "homer", compressed=True, directory=directory, **kwargs)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/homer",
+        "homer",
+        compressed=True,
+        directory=directory,
+        **kwargs,
+    )
 
 
 @task
 def ombi(c, directory=None, **kwargs):
     """Make a backup of ombi data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/ombi", "ombi", compressed=True, directory=directory, **kwargs)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/ombi",
+        "ombi",
+        compressed=True,
+        directory=directory,
+        **kwargs,
+    )
 
 
 @task
 def pihole(c, directory=None, **kwargs):
     """Make a backup of pihole data"""
     c.sudo(f"rm -f {SERVICES_REMOTE_ROOT}/pihole/backups/*", hide=True)
-    c.run(f"{DCP} exec -T pihole sh -c 'mkdir -p /backups && cd /backups && pihole -a -t'", hide=True)
+    c.run(
+        f"{DCP} exec -T pihole sh -c 'mkdir -p /backups && cd /backups && pihole -a -t'",
+        hide=True,
+    )
     path = f"{SERVICES_REMOTE_ROOT}/pihole/backups/"
     path = Path(path) / c.run(f"ls {path}", hide=True).stdout.strip()
     print(f"Downloading pihole backup from {path.as_posix()}...")
@@ -233,27 +262,53 @@ def plex(c, directory=None, **kwargs):
 @task
 def tautulli(c, directory=None, **kwargs):
     """Make a backup of tautulli data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/tautulli", "tautulli", compressed=True, directory=directory, **kwargs)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/tautulli",
+        "tautulli",
+        compressed=True,
+        directory=directory,
+        **kwargs,
+    )
 
 
 @task
 def transmission(c, directory=None, **kwargs):
     """Make a backup of transmission data"""
     _generic_backup(
-        c, f"{SERVICES_REMOTE_ROOT}/transmission", "transmission", compressed=True, directory=directory, **kwargs
+        c,
+        f"{SERVICES_REMOTE_ROOT}/transmission",
+        "transmission",
+        compressed=True,
+        directory=directory,
+        **kwargs,
     )
 
 
 @task
 def wgeasy(c, directory=None, **kwargs):
     """Make a backup of wgeasy data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wgeasy", "wgeasy", compressed=True, directory=directory, **kwargs)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/wgeasy",
+        "wgeasy",
+        compressed=True,
+        directory=directory,
+        **kwargs,
+    )
 
 
 @task
 def wireguard(c, directory=None, **kwargs):
     """Make a backup of wireguard data"""
-    _generic_backup(c, f"{SERVICES_REMOTE_ROOT}/wireguard", "wireguard", compressed=True, directory=directory, **kwargs)
+    _generic_backup(
+        c,
+        f"{SERVICES_REMOTE_ROOT}/wireguard",
+        "wireguard",
+        compressed=True,
+        directory=directory,
+        **kwargs,
+    )
 
 
 @task(aliases=["backup"], default=True)

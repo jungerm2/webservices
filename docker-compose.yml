@@ -48,6 +48,8 @@ services:
   mcserver:
     image: marctv/minecraft-papermc-server:latest
     container_name: mcserver
+    stdin_open: true
+    tty: true
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/mcserver:/data:rw
     ports:
@@ -125,6 +127,22 @@ services:
     restart: unless-stopped
   {%- endif %}
 
+  {%- if filebrowser.enable %}
+  filebrowser:
+    image: filebrowser/filebrowser
+    container_name: filebrowser
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=America/Chicago
+    ports:
+      - 8080:80
+    volumes:
+      - {{ MEDIA_REMOTE_ROOT }}:/srv
+      - {{ SERVICES_REMOTE_ROOT }}/filebrowser/config:/config
+    restart: unless-stopped
+  {%- endif %}
+
   # MEDIA SERVERS
   {%- if plex.enable %}
   plex:
@@ -142,6 +160,27 @@ services:
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/plex:/config
       - {{ MEDIA_REMOTE_ROOT }}:/media
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if jellyfin.enable %}
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=America/Chicago
+      # - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/jellyfin:/config
+      - {{ MEDIA_REMOTE_ROOT }}/movies:/data/movies
+      - {{ MEDIA_REMOTE_ROOT }}/tv:/data/tvshows
+    ports:
+      - 8096:8096
+      - 8920:8920 #optional
+      - 7359:7359/udp #optional
+      - 1900:1900/udp #optional
     restart: unless-stopped
   {%- endif %}
 
@@ -285,11 +324,12 @@ services:
       - PUID=$PUID
       - PGID=$PGID
       - TZ=America/Chicago
-      - TRANSMISSION_WEB_HOME=/flood-for-transmission/
+      - TRANSMISSION_WEB_HOME=/flood-for-transmission
       - USER={{ transmission.user }}
       - PASS={{ transmission.password }}
     volumes:
       - {{ SERVICES_REMOTE_ROOT }}/transmission:/config
+      - {{ SERVICES_REMOTE_ROOT }}/flood-for-transmission:/flood-for-transmission
       - {{ MEDIA_REMOTE_ROOT }}/downloads:/media/downloads
     <<: *usevpn
     restart: unless-stopped

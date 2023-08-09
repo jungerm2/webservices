@@ -8,7 +8,9 @@ The services currently supported are:
 - [Pihole](https://github.com/pi-hole/pi-hole): A black hole for Internet advertisements
 - [Code_server](https://github.com/coder/code-server): VS Code in the browser
 - [Homeassistant](https://github.com/home-assistant/core): Open source home automation that puts local control and privacy first.
+- [Filebrowser](https://github.com/filebrowser/filebrowser): Web File Browser
 - [Plex](https://www.plex.tv/): Plex organizes all of your personal media so you can enjoy it no matter where you are.
+- [Jellyfin](https://github.com/jellyfin/jellyfin): The Free Software Media System
 - [Ombi](https://github.com/Ombi-app/Ombi): Want a Movie or TV Show on Plex/Emby/Jellyfin? Use Ombi!
 - [Prowlarr](https://github.com/Prowlarr/Prowlarr): Indexer manager/proxy built on the popular *arr stack
 - [Radarr](https://github.com/Radarr/Radarr): A fork of Sonarr to work with movies  la Couchpotato.
@@ -160,15 +162,21 @@ code-server:
   enable: false
   github: https://github.com/coder/code-server
 homeassistant:
-  enable: false
+  enable: true
   github: https://github.com/home-assistant/core
+filebrowser:
+  enable: true
+  github: https://github.com/filebrowser/filebrowser
 
 # MEDIA SERVERS
 plex:
-  enable: false
+  enable: true
   short_description: "Plex organizes all of your personal media so you can enjoy it no matter where you are."
   link: https://www.plex.tv/
   claim: ""
+jellyfin:
+  enable: true
+  github: https://github.com/jellyfin/jellyfin
 ombi:
   enable: false
   github: https://github.com/Ombi-app/Ombi
@@ -178,23 +186,23 @@ prowlarr:
   enable: true
   github: https://github.com/Prowlarr/Prowlarr
   short_description: "Indexer manager/proxy built on the popular *arr stack"
-  apikey: ""
+  apikey: {{ keyring_get("webserver", "prowlarr-apikey") }}
 radarr:
   enable: true
   github: https://github.com/Radarr/Radarr
-  apikey: ""
+  apikey: {{ keyring_get("webserver", "radarr-apikey") }}
 sonarr:
   enable: true
   github: https://github.com/Sonarr/Sonarr
-  apikey: ""
+  apikey: {{ keyring_get("webserver", "sonarr-apikey") }}
 lidarr:
   enable: false
   github: https://github.com/Lidarr/Lidarr
-  apikey: ""
+  apikey: {{ keyring_get("webserver", "lidarr-apikey") }}
 bazarr:
-  enable: false
+  enable: true
   github: https://github.com/morpheus65535/bazarr
-  apikey: ""
+  apikey: {{ keyring_get("webserver", "bazarr-apikey") }}
 
 # DOWNLOADERS & VPNs
 wireguard:
@@ -221,7 +229,7 @@ wgeasy:
 
 # MAINTENANCE & MONITORING
 watchtower:
-  enable: false
+  enable: true
   github: https://github.com/containrrr/watchtower
 glances:
   enable: true
@@ -310,6 +318,8 @@ homer:
 mcserver:
   image: marctv/minecraft-papermc-server:latest
   container_name: mcserver
+  stdin_open: true
+  tty: true
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/mcserver:/data:rw
   ports:
@@ -400,6 +410,26 @@ mosquitto:
 
 </details>
 <details>
+    <summary>Compose for Filebrowser</summary>
+
+```yaml
+filebrowser:
+  image: filebrowser/filebrowser
+  container_name: filebrowser
+  environment:
+    - PUID=$PUID
+    - PGID=$PGID
+    - TZ=America/Chicago
+  ports:
+    - 8080:80
+  volumes:
+    - {{ MEDIA_REMOTE_ROOT }}:/srv
+    - {{ SERVICES_REMOTE_ROOT }}/filebrowser/config:/config
+  restart: unless-stopped
+```
+
+</details>
+<details>
     <summary>Compose for Plex</summary>
 
 ```yaml
@@ -415,6 +445,31 @@ plex:
     {% if plex.claim %}
     - PLEX_CLAIM={{ plex.claim }}
     
+```
+
+</details>
+<details>
+    <summary>Compose for Jellyfin</summary>
+
+```yaml
+jellyfin:
+  image: lscr.io/linuxserver/jellyfin:latest
+  container_name: jellyfin
+  environment:
+    - PUID=$PUID
+    - PGID=$PGID
+    - TZ=America/Chicago
+    # - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/jellyfin:/config
+    - {{ MEDIA_REMOTE_ROOT }}/movies:/data/movies
+    - {{ MEDIA_REMOTE_ROOT }}/tv:/data/tvshows
+  ports:
+    - 8096:8096
+    - 8920:8920 #optional
+    - 7359:7359/udp #optional
+    - 1900:1900/udp #optional
+  restart: unless-stopped
 ```
 
 </details>
@@ -577,11 +632,12 @@ transmission:
     - PUID=$PUID
     - PGID=$PGID
     - TZ=America/Chicago
-    - TRANSMISSION_WEB_HOME=/flood-for-transmission/
+    - TRANSMISSION_WEB_HOME=/flood-for-transmission
     - USER={{ transmission.user }}
     - PASS={{ transmission.password }}
   volumes:
     - {{ SERVICES_REMOTE_ROOT }}/transmission:/config
+    - {{ SERVICES_REMOTE_ROOT }}/flood-for-transmission:/flood-for-transmission
     - {{ MEDIA_REMOTE_ROOT }}/downloads:/media/downloads
   <<: *usevpn
   restart: unless-stopped

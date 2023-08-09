@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import humanize
+import keyring
 from fabric import task
 
 from fabfile import install
@@ -53,20 +54,26 @@ def dcp_services(c, verbose=True):
 
 
 @task
-def get_arrkey(c, service, encoding="utf-8"):
+def get_arrkey(c, service, encoding="utf-8", save=False):
     """Retrieve API key for an *arr service"""
     # Special case for Bazarr because it's API is not compliant
     if service.lower() == "bazarr":
         conf = configparser.ConfigParser()
         conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
-        return conf.get("auth", "apikey", fallback=None) or ""
-    return _get_xml_value(
-        c,
-        f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",
-        "ApiKey",
-        encoding=encoding,
-        default="",
-    )
+        key = conf.get("auth", "apikey", fallback=None) or ""
+    else:
+        key = _get_xml_value(
+            c,
+            f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",
+            "ApiKey",
+            encoding=encoding,
+            default="",
+        )
+    if key:
+        print(f"Found {service} API Key: {key}")
+    if save and key:
+        keyring.set_password("webserver", f"{service}-apikey", key)
+    return key
 
 
 @task

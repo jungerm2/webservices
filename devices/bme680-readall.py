@@ -25,7 +25,6 @@ except (RuntimeError, IOError):
 
 print("Calibration data:")
 for name in dir(sensor.calibration_data):
-
     if not name.startswith("_"):
         value = getattr(sensor.calibration_data, name)
 

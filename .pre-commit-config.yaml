@@ -8,13 +8,13 @@ repos:
     pass_filenames: False
     language: system
 
-  - id: fab-render-readme
+  - id: render-readme
     name: Render README
     entry: fab misc.render-readme
     pass_filenames: False
     language: system
 
-  - id: fab-render-readme
+  - id: clear-metadata
     name: Clear Metadata
     entry: fab misc.clear-metadata
     pass_filenames: False

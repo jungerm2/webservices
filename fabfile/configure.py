@@ -63,7 +63,11 @@ def homer(c, services_config=None, root=None):
 
 @task
 def mosquitto(c):
-    _put_mv(c, MOSQUITTO_PATH, f"/{SERVICES_REMOTE_ROOT}/homeassistant/addons/mosquitto/config")
+    _put_mv(
+        c,
+        MOSQUITTO_PATH,
+        f"/{SERVICES_REMOTE_ROOT}/homeassistant/addons/mosquitto/config",
+    )
 
 
 @task

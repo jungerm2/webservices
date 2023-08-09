@@ -67,7 +67,8 @@ def _load_service_config(services_config=None, root=None):
     env = _get_jinja_env(root)
     services = env.get_template(services_config or str(SERVICES_PATH), "r")
     services = services.render(
-        keyring_get=keyring.get_password, public_ip=requests.get("https://api.ipify.org").content.decode("utf8")
+        keyring_get=keyring.get_password,
+        public_ip=requests.get("https://api.ipify.org").content.decode("utf8"),
     )
 
     # Load services config, expand enable option
