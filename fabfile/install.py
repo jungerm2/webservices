@@ -7,30 +7,11 @@ from fabfile.utils import _check_run, _get_py_version, _put_mv
 def all(c, force=False):
     """Run all Install sub-tasks"""
     croc(c, force=force)
-    ctop(c, force=force)
     docker(c, force=force)
     docker_compose(c, force=force)
     lazydocker(c, force=force)
     python3(c, force=force)
     speedtest(c, force=force)
-
-
-@task
-def ctop(c, force=False):
-    """Install top-like interface for container metrics"""
-    _check_run(
-        c,
-        "ctop -v",
-        [
-            "echo 'deb http://packages.azlux.fr/debian/ buster main' | sudo tee /etc/apt/sources.list.d/azlux.list",
-            "wget -qO - https://azlux.fr/repo.gpg.key | sudo apt-key add -",
-            "sudo apt update",
-            "sudo apt install docker-ctop",
-        ],
-        on_fail="CTOP is already installed, skipping...",
-        sudo=False,
-        force=force,
-    )
 
 
 @task

@@ -6,6 +6,8 @@ The services currently supported are:
 - [Homer](https://github.com/bastienwirtz/homer): A very simple static homepage for your server.
 - [Mcserver](None): Missing Description!
 - [Pihole](https://github.com/pi-hole/pi-hole): A black hole for Internet advertisements
+- [Mealie](https://github.com/mealie-recipes/mealie): Mealie is a self hosted recipe manager and meal planner with a RestAPI backend and a reactive frontend application built in Vue for a pleasant user experience for the whole family. Easily add recipes into your database by providing the url and mealie will automatically import the relevant data or add a family recipe with the UI editor
+- [Duckdns](https://www.duckdns.org/): Missing Description!
 - [Code_server](https://github.com/coder/code-server): VS Code in the browser
 - [Homeassistant](https://github.com/home-assistant/core): Open source home automation that puts local control and privacy first.
 - [Filebrowser](https://github.com/filebrowser/filebrowser): Web File Browser
@@ -13,7 +15,7 @@ The services currently supported are:
 - [Jellyfin](https://github.com/jellyfin/jellyfin): The Free Software Media System
 - [Ombi](https://github.com/Ombi-app/Ombi): Want a Movie or TV Show on Plex/Emby/Jellyfin? Use Ombi!
 - [Prowlarr](https://github.com/Prowlarr/Prowlarr): Indexer manager/proxy built on the popular *arr stack
-- [Radarr](https://github.com/Radarr/Radarr): A fork of Sonarr to work with movies  la Couchpotato.
+- [Radarr](https://github.com/Radarr/Radarr): Movie organizer/manager for usenet and torrent users.
 - [Sonarr](https://github.com/Sonarr/Sonarr): Smart PVR for newsgroup and bittorrent users.
 - [Lidarr](https://github.com/Lidarr/Lidarr): Looks and smells like Sonarr but made for music.
 - [Bazarr](https://github.com/morpheus65535/bazarr): Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements. You define your preferences by TV show or movie and Bazarr takes care of everything for you.
@@ -97,7 +99,6 @@ Available tasks:
   configure.wireguard (configure.wg)               Upload wireguard config (i.e: wg0.conf) to host
   install.all (install, install.install)           Run all Install sub-tasks
   install.croc                                     Install croc: a tool to send and receive files
-  install.ctop                                     Install top-like interface for container metrics
   install.docker                                   Install docker if not present
   install.docker-compose (install.dcp)             Install docker-compose if not present
   install.elodie                                   An EXIF-based photo assistant, organizer, manager and workflow automation tool
@@ -158,6 +159,14 @@ pihole:
   enable: true
   webpassword: {{ keyring_get("webserver", "pihole") }}
   github: https://github.com/pi-hole/pi-hole
+mealie:
+  enable: true
+  github: https://github.com/mealie-recipes/mealie
+duckdns:
+  enable: true
+  link: https://www.duckdns.org/
+  token: {{ keyring_get("webserver", "duckdns-token") }}
+  subdomains: {{ keyring_get("webserver", "duckdns-subdomains") }}
 code-server:
   enable: false
   github: https://github.com/coder/code-server
@@ -224,7 +233,7 @@ transmission:
 wgeasy:
   enable: true
   password: {{ keyring_get("webserver", "wg-easy-pass") }}
-  wanip: {{ public_ip }}
+  wanip: {{ keyring_get("webserver", "duckdns-subdomains") }}.duckdns.org
   github: https://github.com/WeeJeWel/wg-easy
 
 # MAINTENANCE & MONITORING
@@ -359,6 +368,45 @@ pihole:
     - NET_ADMIN
   dns:
     - 127.0.0.1
+  restart: unless-stopped
+```
+
+</details>
+<details>
+    <summary>Compose for Mealie</summary>
+
+```yaml
+mealie:
+  container_name: mealie
+  image: hkotel/mealie:latest
+  ports:
+    - 9925:80
+  environment:
+    - PUID=$PUID
+    - PGID=$PGID
+    - TZ=America/Chicago
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/mealie:/app/data
+  restart: unless-stopped
+```
+
+</details>
+<details>
+    <summary>Compose for Duckdns</summary>
+
+```yaml
+duckdns:
+  image: lscr.io/linuxserver/duckdns:latest
+  container_name: duckdns
+  environment:
+    - PUID=$PUID
+    - PGID=$PGID
+    - TZ=America/Chicago
+    - SUBDOMAINS={{ duckdns.subdomains }}
+    - TOKEN={{ duckdns.token }}
+    - LOG_FILE=true
+  volumes:
+    - {{ SERVICES_REMOTE_ROOT }}/duckdns:/config
   restart: unless-stopped
 ```
 

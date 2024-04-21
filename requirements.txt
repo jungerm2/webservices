@@ -8,3 +8,6 @@ pre-commit
 python-dateutil
 isort
 black
+tqdm
+humanize
+lxml

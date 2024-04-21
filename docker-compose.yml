@@ -89,6 +89,37 @@ services:
     restart: unless-stopped
   {%- endif %}
 
+  {%- if mealie.enable %}
+  mealie:
+    container_name: mealie
+    image: hkotel/mealie:latest
+    ports:
+      - 9925:80
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=America/Chicago
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/mealie:/app/data
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if duckdns.enable %}
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=America/Chicago
+      - SUBDOMAINS={{ duckdns.subdomains }}
+      - TOKEN={{ duckdns.token }}
+      - LOG_FILE=true
+    volumes:
+      - {{ SERVICES_REMOTE_ROOT }}/duckdns:/config
+    restart: unless-stopped
+  {%- endif %}
+
   {%- if code_server.enable %}
   code-server:
     image: lscr.io/linuxserver/code-server
@@ -297,7 +328,7 @@ services:
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv4.conf.all.src_valid_mark=1
     <<: *vpnports
-    restart: unless-stopped
+    restart: always
   {%- endif %}
 
   {%- if gluetun.enable %}

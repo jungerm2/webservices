@@ -12,6 +12,14 @@ pihole:
   enable: true
   webpassword: {{ keyring_get("webserver", "pihole") }}
   github: https://github.com/pi-hole/pi-hole
+mealie:
+  enable: true
+  github: https://github.com/mealie-recipes/mealie
+duckdns:
+  enable: true
+  link: https://www.duckdns.org/
+  token: {{ keyring_get("webserver", "duckdns-token") }}
+  subdomains: {{ keyring_get("webserver", "duckdns-subdomains") }}
 code-server:
   enable: false
   github: https://github.com/coder/code-server
@@ -78,7 +86,7 @@ transmission:
 wgeasy:
   enable: true
   password: {{ keyring_get("webserver", "wg-easy-pass") }}
-  wanip: {{ public_ip }}
+  wanip: {{ keyring_get("webserver", "duckdns-subdomains") }}.duckdns.org
   github: https://github.com/WeeJeWel/wg-easy
 
 # MAINTENANCE & MONITORING

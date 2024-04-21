@@ -95,6 +95,12 @@ services:
         logo: "assets/dashboard-icons/png/wireguard.png"
         url: "http://{{ hostname }}:51821"
       {%- endif %}
+      {%- if mealie.enable %}
+      - name: "Mealie"
+        subtitle: "Recipe database and meal planner"
+        logo: "assets/dashboard-icons/svg/mealie.svg"
+        url: "http://{{ hostname }}:9925"
+      {%- endif %}
       {%- if code_server.enable %}
       - name: "Code-Server"
         subtitle: "VS Code in the browser"

@@ -1,7 +1,7 @@
 import paho.mqtt.client as mqtt
 from gpiozero import LED
 
-BROKER_ADDR = "192.168.1.115"
+BROKER_ADDR = "192.168.1.215"
 TOPIC_BASE = "home/bedroom/smartplug1"
 HA_STATUS_TOPIC = "homeassistant/status"
 CLIENT_NAME = "SMARTPLUG1-RPI0"

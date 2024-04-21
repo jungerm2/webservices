@@ -6,6 +6,7 @@ from pathlib import Path
 import humanize
 import keyring
 from fabric import task
+from ruamel.yaml import YAML
 
 from fabfile import install
 from fabfile.defaults import DCP, DOCKERFILE_PATH, SERVICES_REMOTE_ROOT
@@ -31,7 +32,7 @@ def battery(c, verbose=False, as_json=False):
         if as_json:
             return json.loads(out.stdout)
     else:
-        c.run('upower -i $(upower -e | grep BAT) | grep --color=never -E "state|to\ full|to\ empty|percentage"')
+        c.run(r'upower -i $(upower -e | grep BAT) | grep --color=never -E "state|to\ full|to\ empty|percentage"')
 
 
 @task(aliases=["dcp_ls_up"])
@@ -58,9 +59,8 @@ def get_arrkey(c, service, encoding="utf-8", save=False):
     """Retrieve API key for an *arr service"""
     # Special case for Bazarr because it's API is not compliant
     if service.lower() == "bazarr":
-        conf = configparser.ConfigParser()
-        conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
-        key = conf.get("auth", "apikey", fallback=None) or ""
+        conf = YAML(typ="safe").load(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.yaml"))
+        return conf.get("auth", {}).get("apikey") or ""
     else:
         key = _get_xml_value(
             c,
@@ -81,9 +81,8 @@ def get_arrport(c, service, encoding="utf-8"):
     """Retrieve port for an *arr service"""
     # Special case for Bazarr because it's API is not compliant
     if service.lower() == "bazarr":
-        conf = configparser.ConfigParser()
-        conf.read_string(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.ini"))
-        return conf.get("general", "port", fallback=None) or ""
+        conf = YAML(typ="safe").load(_read_file(c, f"{SERVICES_REMOTE_ROOT}/{service}/config/config.yaml"))
+        return conf.get("general", {}).get("port") or ""
     return _get_xml_value(
         c,
         f"{SERVICES_REMOTE_ROOT}/{service}/config.xml",

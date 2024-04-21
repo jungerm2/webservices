@@ -96,7 +96,7 @@ def arr_path(c, service, port, apikey, max_staleness=48, sleep=10, retries=3, fo
         else:
             if response["data"]:
                 stale = False
-                timestamp = response["data"][0].get("date")
+                timestamp = response["data"][-1].get("date")
                 timestamp = dateutil.parser.parse(timestamp).replace(tzinfo=dateutil.tz.UTC)
             else:
                 stale = True
@@ -108,7 +108,7 @@ def arr_path(c, service, port, apikey, max_staleness=48, sleep=10, retries=3, fo
             create_backup()
             time.sleep(sleep)
         else:
-            return response[0]["path"] if type(response) is list else response["data"][0]["filename"]
+            return response[0]["path"] if type(response) is list else response["data"][-1]["filename"]
     else:
         # If none exist, create one
         create_backup()
@@ -146,7 +146,7 @@ def arrs(
     )
 
     if missing_arrs := arrs - running_arrs:
-        print(f"WARNING: Skipping {missing_arrs} as they are not running!")
+        print(f"WARNING: Skipping {', '.join(missing_arrs)} as they are not running!")
 
     running_arrs = {
         service: (
